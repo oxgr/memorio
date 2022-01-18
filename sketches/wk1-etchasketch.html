@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="360" >
+    <title>etch-a-sketch</title>
+    
+    <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+    	body {
+    		margin:  0;
+    	}
+    </style>
+	</head>
+
+	<body>
+		<script>
+
+// MQTT --------------------
+const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
+const client = mqtt.connect(server, {
+  clientId: "faadhi's etch a sketch"
+});
+
+let bg, penCol;
+
+let data;
+let x = 0;
+let y = 0;
+
+// Functions ++++++++++++++++++++++++++++++
+
+function setup() {
+  
+  client.on('connect', () => client.subscribe('/etch/#') );
+  client.on('message', (topic, message) => messageReceived(topic, message) );
+
+  createCanvas( windowWidth, windowHeight );
+  bg =  color('#faad89');
+  penCol = color('white');
+
+  background( bg );
+  // noStroke();
+
+}
+
+function draw() {  
+
+
+
+}
+
+function moveCursor( x, y ) {
+	stroke( penCol );
+	strokeWeight(10);
+	point(x, y);
+}
+
+function messageReceived(topic, payload) {
+
+	payload = Number(payload);
+	console.log(payload);
+
+	
+
+	switch ( topic ) {
+
+		case '/etch/x':
+			payload = ( ( payload / 127) * width);
+			x = payload;
+			moveCursor( x, y );
+			break;
+
+		case '/etch/y':
+			payload = height - ( ( payload / 127) * height);
+			y = payload;
+			moveCursor( x, y );
+			break;
+
+			case '/etch/reset':
+				background( bg );
+			break;
+
+	}
+
+}
+
+	</script>
+</body>
