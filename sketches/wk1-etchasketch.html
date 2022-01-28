@@ -21,7 +21,7 @@
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
 const client = mqtt.connect(server, {
-  clientId: "faadhi's etch a sketch"
+  clientId: "faadhi's etch-a-sketch"
 });
 
 let bg, penCol;
@@ -29,6 +29,9 @@ let bg, penCol;
 let data;
 let x = 0;
 let y = 0;
+const m = 5;
+let init = false;
+let prev = [];
 
 // Functions ++++++++++++++++++++++++++++++
 
@@ -38,49 +41,76 @@ function setup() {
   client.on('message', (topic, message) => messageReceived(topic, message) );
 
   createCanvas( windowWidth, windowHeight );
+  
   bg =  color('#faad89');
   penCol = color('white');
 
   background( bg );
-  // noStroke();
+
 
 }
 
 function draw() {  
 
+	// fill( 0xfa, 0xaa, 0x89, 0.1);
+	// rect(0, 0, width, height);
 
+}
+
+function keyPressed() {
+	background(bg);
 
 }
 
 function moveCursor( x, y ) {
+
+	if (!init) {			// if there hasn't been a message before, fill the prev array with the current xy value.
+		prev = [ x, y ];
+		init = true;
+	}
+
+	const diffx = x - prev[ 0 ];
+	const diffy = y - prev[ 1 ];
+	if (diffx + diffy < 20) strokeWeight( diffx + diffy );		// movement difference = size of brush
+
+	stroke( color("red"));										// two lines for layering
+	line( prev[0]+m, prev[1]+m, x+m, y+m);
 	stroke( penCol );
-	strokeWeight(10);
-	point(x, y);
+	line( prev[0], prev[1], x, y);
+	prev = [x, y];
 }
 
 function messageReceived(topic, payload) {
 
-	payload = Number(payload);
-	console.log(payload);
-
-	
+		
 
 	switch ( topic ) {
 
 		case '/etch/x':
-			payload = ( ( payload / 127) * width);
+			payload = Number(payload);
+			payload = ( ( payload ) * width);
 			x = payload;
 			moveCursor( x, y );
 			break;
 
 		case '/etch/y':
-			payload = height - ( ( payload / 127) * height);
+			payload = Number(payload);
+			payload = height - ( ( payload ) * height);
 			y = payload;
 			moveCursor( x, y );
 			break;
 
-			case '/etch/reset':
+		case '/etch/xy':
+			payload = new TextDecoder("utf-8").decode(payload);			// need to decode Uint8Array payload into string
+			let arr = payload.split(' ');
+			x = ( Number(arr[0]) * width);
+			y = height - ( Number( arr[1] ) * height);
+			moveCursor( x, y );
+			break;
+
+		case '/etch/reset':
 				background( bg );
+				init = false;
 			break;
 
 	}
