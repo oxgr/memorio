@@ -18,11 +18,9 @@
 	<body>
 		<script>
 
-
-
 const decoder = new TextDecoder("utf-8");
 
-const id = Math.floor( Math.random() * Math.pow( 255, 2 ) ).toString(16); // generate random base-16 code as id
+const id = Math.floor( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 code as id
 const char = Math.ceil( Math.random() * 255 );
 const color = Math.floor( Math.random() * Math.pow( 255, 3 ) ).toString(16);
 
@@ -34,8 +32,11 @@ const memory = {
   	y: 100
   }
 
-const idaddr = '/memor/' + id;
-const clientId = "memor.io-" + id;
+const clientId = "memorio-" + id;
+
+let textX = 100;
+let textY = 100;
+const lineHeight = 30;
 
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
@@ -47,7 +48,7 @@ const client = mqtt.connect(server, {
 
 function setup() {
   
-  client.on('connect', () => client.subscribe('/memor/*') );
+  client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
 
   createCanvas( windowWidth, windowHeight );
@@ -57,6 +58,11 @@ function setup() {
   noStroke();
   textSize(48);
 
+  text("This id: " + id, textX, textY );
+  textY += lineHeight;
+
+  textSize(24);
+
 }
 
 function draw() {  
@@ -65,27 +71,22 @@ function draw() {
 }
 
 function keyPressed() {
+	
+  client.publish( "/memorio/agent", JSON.stringify(memory) );
 
-	// if (keyCode == BACKSPACE)
-	
-	
-	text( 'message published! id = ' + id, 200, 400);
-	client.publish( idaddr, JSON.stringify(memory) );
+	text( 'message published!', textX, textY);
+	textY += lineHeight;
 
 }
 
-function moveCursor( x, y ) {
+function messageReceived(topic, message) {
 
+	const agent = JSON.parse(decoder.decode(message));
 
-
-}
-
-function messageReceived(topic, payload) {
-
-	const topics = topic.split('/');
-
-	console.log(JSON.parse(decoder.decode(payload)));
-
+  if (agent.id != id) {
+    text( "message received from id: " + agent.id, textX, textY );
+    textY += lineHeight;
+  }
 }
 
 	</script>
