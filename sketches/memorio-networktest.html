@@ -20,7 +20,7 @@
 
 const decoder = new TextDecoder("utf-8");
 
-const id = Math.floor( Math.random() * Math.pow( 128, 4 ) ).toString(16); // generate random base-16 code as id
+const id = Math.floor( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 code as id
 const char = Math.ceil( Math.random() * 255 );
 const color = Math.floor( Math.random() * Math.pow( 255, 3 ) ).toString(16);
 
@@ -34,8 +34,8 @@ const memory = {
 
 const clientId = "memorio-" + id;
 
-let textOffset = 100;
-let textIndex = 200;
+let textX = 100;
+let textY = 100;
 const lineHeight = 30;
 
 // MQTT --------------------
@@ -58,7 +58,8 @@ function setup() {
   noStroke();
   textSize(48);
 
-  text("This id: " + id, textOffse, textIndex );
+  text("This id: " + id, textX, textY );
+  textY += lineHeight;
 
   textSize(24);
 
@@ -71,9 +72,10 @@ function draw() {
 
 function keyPressed() {
 	
-	text( 'message published!', textOffset, textLine);
-	textLine += lineHeight;
   client.publish( "/memorio/agent", JSON.stringify(memory) );
+
+	text( 'message published!', textX, textY);
+	textY += lineHeight;
 
 }
 
@@ -81,9 +83,10 @@ function messageReceived(topic, message) {
 
 	const agent = JSON.parse(decoder.decode(message));
 
-  text( "message received from id: " + agent.id, textOffset, textLine );
-  textLine += lineHeight;
-
+  if (agent.id != id) {
+    text( "message received from id: " + agent.id, textX, textY );
+    textY += lineHeight;
+  }
 }
 
 	</script>
