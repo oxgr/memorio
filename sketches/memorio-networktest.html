@@ -20,9 +20,9 @@
 
 const decoder = new TextDecoder("utf-8");
 
-const id = Math.floor( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 code as id
+const id = Math.ceil( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 4-digit code as id i.e. 1-f
 const char = Math.ceil( Math.random() * 255 );
-const color = Math.floor( Math.random() * Math.pow( 255, 3 ) ).toString(16);
+const color = Math.ceil( Math.random() * Math.pow( 255, 3 ) ).toString(16);
 
 const memory = {
   	id: id,
