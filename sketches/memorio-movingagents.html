@@ -99,9 +99,11 @@ function draw() {
 }
 
 function drawAgent( agent ) {
-
+  strokeWeight(4);
+  stroke(51);
   fill( "#" + agent.color );
   rect( agent.x, agent.y, agentSize )
+  strokeWeight(0);
 
 }
 
