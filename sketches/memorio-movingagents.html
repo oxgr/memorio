@@ -28,6 +28,8 @@ const randomUnicode = () => {
   }
 
 const decoder = new TextDecoder("utf-8");
+let showText = false;
+let control= true;
 
 const id = Math.ceil( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 4-digit code as id i.e. 1-f
 const char = randomUnicode();
@@ -41,6 +43,7 @@ const thisAgent = {
   	x: 0,
   	y: 100
   }
+  thisAgent.control=true;
 
 const memory = [ thisAgent ];   // memory includes all agents that are attached.
 const world  = [ thisAgent ];   // world includes all agents that are connected.
@@ -95,6 +98,9 @@ function draw() {
   text( 'or click on edges to move.', 50, 150 );
 
 
+  
+
+
   for ( a of world ) drawAgent( a );
 
 }
@@ -112,13 +118,21 @@ function drawAgent( agent ) {
 
   fill( "#" + agent.color );
   text( String.fromCodePoint( agent.char ), agent.x, agent.y, agentSize )
+  if(agent.showText){
+    fill(50);
+    text('Merge', windowWidth/2, windowHeight/2);
+    //client.publish( "/memorio/agent", JSON.stringify( agent ) );
+  }
+  else{
+  agent.showText = false;
+}
 
 }
 
 function keyPressed() {
 
   // thisAgent.char += 1;
-
+if(thisAgent.control){
   switch ( keyCode ) {
 
     case ( 37 ):
@@ -142,6 +156,7 @@ function keyPressed() {
       break;
 
   }
+}
 
   client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
 
@@ -149,7 +164,13 @@ function keyPressed() {
 
 function mouseClicked() {
 
-  let mouse = [ mouseX, mouseY ];
+if(thisAgent.showText){
+  console.log("Merge successful");
+  thisAgent.control=false;
+  //thisAgent.showText=false;
+}
+
+ /* let mouse = [ mouseX, mouseY ];
 
   console.log()
 
@@ -159,7 +180,7 @@ function mouseClicked() {
 
   if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
 
-  if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+  if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;*/
 
 
 }
@@ -192,6 +213,35 @@ function messageReceived(topic, message) {
         a.y = agent.y;
       }
       console.log( "id: %s, x: %i, y: %i", agent.id, agent.x, agent.y );    // formats like printf
+            if(thisAgent.x<agent.x+10 && thisAgent.x+40>agent.x ||thisAgent.x>agent.x-10 && thisAgent.x-40<agent.x){
+        console.log("collision on x");
+        thisAgent.showText=true;
+            if(thisAgent.y<agent.y+10 && thisAgent.y+40>agent.y||thisAgent.y>agent.y-10 && thisAgent.y-40<agent.y){
+              console.log("collision on y");
+              thisAgent.showText=true;
+            }
+            else{
+        thisAgent.showText=false;
+                if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+      return;
+        client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+      }
+        
+        if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+      return;
+        client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
+
+            //if(){
+
+           //   console.log("collision on y");
+            //}
+      }
+      else{
+        thisAgent.showText=false;
+                if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+      return;
+        client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
+      }
       break;
 
     case ( 'world' ):
