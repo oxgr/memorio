@@ -8,6 +8,7 @@
     
     <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/get-some-cool-emojis"></script>
     <style>
     	body {
     		margin:  0;
@@ -19,38 +20,35 @@
 		<script>
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
-const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
-const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 number with input number of digits i.e. 0-f
-const randomUnicodeChar = () => { 
-  let c, num;
-  do { 
-    num = parseInt( randomB16Num( 3 ), 16 );
-    console.log( num );
-    c = String.fromCodePoint( num );
-  }
-    while ( num < 32 || ( 65 < num && num < 880 ));
+const setRandomPos = ( memory ) => { memory.x = randomPos()[0]; memory.y = randomPos()[1]; }
+const randomCharCode = () => { 
+  let c;
+  // do { c = Math.ceil( Math.random() * 2048 ); }
+  //   while ( c < 32 || ( 65 < c && c < 880 ) );
+
   return c;
   }
 
 const decoder = new TextDecoder("utf-8");
 
-const id = randomB16Num( 4 );  // generate random base-16 4-digit code as id i.e. 1-f
-const char = randomUnicodeChar();
-console.log( char );
-const color = randomB16Num( 6 );
+const id = Math.ceil( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 4-digit code as id i.e. 1-f
+// const char = randomCharCode();
+const char = getSomeCoolEmojis(1);
+console.log( char, String.fromCharCode( char ));
+const color = Math.ceil( Math.random() * Math.pow( 255, 3 ) ).toString(16);
 
 const thisAgent = {
   	id: id,
   	char: char,
   	color: color,
-  	x: 200,
-  	y: 200
+  	x: 0,
+  	y: 100
   }
 
 const memory = [ thisAgent ];   // memory includes all agents that are attached.
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
-const agentSize = 40;
+const agentSize = 48;
 
 const clientId = "memorio-" + id;
 
@@ -72,7 +70,7 @@ function setup() {
 
   background( bg );
 
-  // setRandomPos( thisAgent );
+  setRandomPos( thisAgent );
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
@@ -87,11 +85,15 @@ function setup() {
 
 function draw() { 
 
-  background( 255 ,20);
-
-  drawEdges();
+  background( 255 );
 
   textSize( 24 );
+  fill( 235, 20 );
+  rect( 0, 0, width / 3, height );
+  rect( 0, 0, width, height / 3 );
+  rect( width - ( width / 3 ), 0, width / 3, height );
+  rect( 0, height - ( height / 3 ), width, height / 3 );
+
   fill( 50 );
   textStyle( BOLD );
   text( 'Memor.io', 50, 50 );
@@ -105,15 +107,8 @@ function draw() {
 
 }
 
-function drawEdges() {
-  fill( 235, 20 );
-  rect( 0, 0, width / 3, height );
-  rect( 0, 0, width, height / 3 );
-  rect( width - ( width / 3 ), 0, width / 3, height );
-  rect( 0, height - ( height / 3 ), width, height / 3 );
-}
-
 function drawAgent( agent ) {
+
 
   fill( "#" + agent.color );
   text( agent.char, agent.x, agent.y, agentSize )
@@ -145,10 +140,6 @@ function keyPressed() {
     case ( 83 ):
       thisAgent.y += agentSize;
       break;
-
-    case( 32 ):
-      thisAgent.char = randomUnicodeChar();
-      thisAgent.color = randomB16Num( 6 );
 
   }
 
