@@ -19,33 +19,38 @@
 		<script>
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
-const setRandomPos = ( memory ) => { memory.x = randomPos()[0]; memory.y = randomPos()[1]; }
-const randomUnicode = () => { 
-  let c;
-  do { c = Math.ceil( Math.random() * 2048 ); }
-    while ( c < 32 || ( 65 < c && c < 880 ) );
+const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
+const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 number with input number of digits i.e. 0-f
+const randomUnicodeChar = () => { 
+  let c, num;
+  do { 
+    num = parseInt( randomB16Num( 3 ), 16 );
+    console.log( num );
+    c = String.fromCodePoint( num );
+  }
+    while ( num < 32 || ( 65 < num && num < 880 ));
   return c;
   }
 
 const decoder = new TextDecoder("utf-8");
 
-const id = Math.ceil( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 4-digit code as id i.e. 1-f
-const char = randomUnicode();
-console.log( char, String.fromCodePoint( char ));
-const color = Math.ceil( Math.random() * Math.pow( 255, 3 ) ).toString(16);
+const id = randomB16Num( 4 );  // generate random base-16 4-digit code as id i.e. 1-f
+const char = randomUnicodeChar();
+console.log( char );
+const color = randomB16Num( 6 );
 
 const thisAgent = {
   	id: id,
   	char: char,
   	color: color,
-  	x: 0,
-  	y: 100
+  	x: 200,
+  	y: 200
   }
 
 const memory = [ thisAgent ];   // memory includes all agents that are attached.
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
-const agentSize = 20;
+const agentSize = 40;
 
 const clientId = "memorio-" + id;
 
@@ -67,7 +72,7 @@ function setup() {
 
   background( bg );
 
-  setRandomPos( thisAgent );
+  // setRandomPos( thisAgent );
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
@@ -75,7 +80,7 @@ function setup() {
 
   fill('white');
   noStroke();
-  textSize( 24 );
+  
   // textFont( 'Courier' );
 
 }
@@ -86,6 +91,7 @@ function draw() {
 
   drawEdges();
 
+  textSize( 24 );
   fill( 50 );
   textStyle( BOLD );
   text( 'Memor.io', 50, 50 );
@@ -94,7 +100,7 @@ function draw() {
   text( 'Press arrow keys/WASD', 50, 100 );
   text( 'or click on edges to move.', 50, 150 );
 
-
+  textSize( agentSize );
   for ( a of world ) drawAgent( a );
 
 }
@@ -109,9 +115,8 @@ function drawEdges() {
 
 function drawAgent( agent ) {
 
-
   fill( "#" + agent.color );
-  text( String.fromCodePoint( agent.char ), agent.x, agent.y, agentSize )
+  text( agent.char, agent.x, agent.y, agentSize )
 
 }
 
@@ -140,6 +145,10 @@ function keyPressed() {
     case ( 83 ):
       thisAgent.y += agentSize;
       break;
+
+    case( 32 ):
+      thisAgent.char = randomUnicodeChar();
+      thisAgent.color = randomB16Num( 6 );
 
   }
 
