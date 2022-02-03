@@ -50,7 +50,15 @@ const lineHeight = 30;
 
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
-const client = mqtt.connect(server, { clientId: clientId });
+const client = mqtt.connect(server, {
+  clientId: clientId,
+  will: {
+    topic: '/memorio/disconnect',
+    payload: JSON.stringify( thisAgent ),
+    QoS: 1,
+    retain: false
+  }
+});
 
 // Functions ++++++++++++++++++++++++++++++
 
@@ -159,12 +167,10 @@ function messageReceived(topic, message) {
   topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
   message = decoder.decode(message);  // decode array buffer.
 
-  let agent;
-  if ( topic != 'memory' ) {   // memory and world branch is reserved for arrays of agent objects.
-    agent = JSON.parse( message );    
-    if ( agent.id == thisAgent.id )   // if the received agent matches this agent, don't do anything.
-      return;
-  }
+  let agent = JSON.parse( message );    
+  
+  if ( agent.id == thisAgent.id ) return;  // if the received agent matches this agent, don't do anything.
+      
 
 
   switch (topic) {
@@ -188,6 +194,11 @@ function messageReceived(topic, message) {
       if ( !world.find( a => a.id == agent.id ) ) world.push( agent );
       console.log( 'received agent. new world = ', world );
       break;
+
+    case ( 'disconnect' ):
+      let index = world.findIndex( a => a.id == agent.id );
+      if ( index > -1 ) world.splice( index, 1 );
+      console.log( 'someone disconnected! new owrld = ', world);
 
   }
 
