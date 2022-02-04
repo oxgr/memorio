@@ -97,11 +97,52 @@ function draw() {
   text( 'Press arrow keys/WASD', 50, 100 );
   text( 'or click on edges to move.', 50, 150 );
 
+  for ( a of world ) {
+    if ( a != thisAgent ) checkBounds( a );     // right now, checkBounds is run for every obj in world except if thisAgent
+    drawAgent( a );
+  }
 
-  
+}
 
+function checkBounds( agent ) {
 
-  for ( a of world ) drawAgent( a );
+  // maybe use a p5.Vector? it's an object that's p much just an x and y value.
+
+  // 1. Turn xy coordinates into a vector with createVector()
+  // 2. use the dist() function to find the distance between one vector and another.
+
+  if( thisAgent.x < +agent.x+10 && thisAgent.x+40>agent.x || thisAgent.x>agent.x-10 && thisAgent.x-40<agent.x){
+   
+  console.log("collision on x");
+
+  thisAgent.showText=true;
+
+    if( thisAgent.y < agent.y+10 && thisAgent.y+40>agent.y||thisAgent.y>agent.y-10 && thisAgent.y-40<agent.y) {
+          console.log("collision on y");
+          thisAgent.showText=true;
+        }
+        else{
+    thisAgent.showText=false;
+            if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+  return;
+    client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+  }
+    
+    if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+  return;
+    client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
+
+        //if(){
+
+       //   console.log("collision on y");
+        //}
+  }
+  else{
+    thisAgent.showText=false;
+            if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
+  return;
+    client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
+  }
 
 }
 
@@ -208,40 +249,11 @@ function messageReceived(topic, message) {
 
     case ( 'agent' ):
       let a = world.find( a => a.id == agent.id );
-      if ( a ) {
+      if ( a ) {        // a check to see if a exists. if world doesn't include a, it will return undefined.
         a.x = agent.x;
         a.y = agent.y;
       }
       console.log( "id: %s, x: %i, y: %i", agent.id, agent.x, agent.y );    // formats like printf
-            if(thisAgent.x<agent.x+10 && thisAgent.x+40>agent.x ||thisAgent.x>agent.x-10 && thisAgent.x-40<agent.x){
-        console.log("collision on x");
-        thisAgent.showText=true;
-            if(thisAgent.y<agent.y+10 && thisAgent.y+40>agent.y||thisAgent.y>agent.y-10 && thisAgent.y-40<agent.y){
-              console.log("collision on y");
-              thisAgent.showText=true;
-            }
-            else{
-        thisAgent.showText=false;
-                if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-      return;
-        client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
-      }
-        
-        if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-      return;
-        client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
-
-            //if(){
-
-           //   console.log("collision on y");
-            //}
-      }
-      else{
-        thisAgent.showText=false;
-                if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-      return;
-        client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
-      }
       break;
 
     case ( 'world' ):
