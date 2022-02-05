@@ -47,8 +47,8 @@ const thisAgent = {
   	id: id,
   	char: char,
   	color: color,
-  	x: 200,
-  	y: 200
+  	x: 0,
+  	y: 0
   }
 
 
@@ -61,14 +61,21 @@ const agentSize = 40;
 
 const clientId = "memorio-" + id;
 
-const bg = "#fff";
+const bg = "#000";
 
 let textX = 100;
 let textY = 100;
-const lineHeight = 30;
 let font;
 
-let v1, v2;
+const MAP_SIZE = 2000;
+const MAP_WIDTH = MAP_SIZE;
+const MAP_HEIGHT = MAP_SIZE;
+const CENTER = {
+  X: MAP_WIDTH / 2,
+  Y: MAP_HEIGHT / 2
+}
+
+let v1, v2, thisVel;
 let speed = 2;
 
 // MQTT --------------------
@@ -104,11 +111,13 @@ function setup() {
   client.on('message', (topic, message) => messageReceived(topic, message) );
   client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
 
-  fill('white');
-  noStroke();
 
   v1 = createVector();
   v2 = createVector();
+  thisVel = createVector();
+
+  thisAgent.x = MAP_WIDTH / 2;
+  thisAgent.y = MAP_HEIGHT / 2;
   
   // let font = loawdFont( '../assets/noto.ttf' );
   // textFont( font );
@@ -118,19 +127,48 @@ function setup() {
 
 function draw() { 
 
-  background( 255 ,20);
+  background( 255 );
 
-  drawEdges();
+  translate( width / 2, height / 2 );
+  translate( -thisAgent.x, -thisAgent.y );
+
+  drawMap();
+  // drawEdges();
   drawTitle();
 
-  if ( mouseIsPressed ) move(); 
+  
+
+  // if ( mouseIsPressed )
+    traverse( ); 
   
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
 
 }
 
+function drawMap() {
+
+  fill( 255 );
+  rect( 0, 0, MAP_WIDTH, MAP_HEIGHT );
+
+  const mapStep = MAP_SIZE / 20;
+  stroke( 150 );
+  strokeWeight( 3 );
+
+  for ( let y = 0; y <= MAP_HEIGHT ; y += mapStep ) {
+    for ( let x = 0; x <= MAP_WIDTH ; x += mapStep ) {
+
+      point( x, y );
+
+    }
+  }
+
+  
+
+}
+
 function drawEdges() {
+  noStroke();
   fill( 235, 20 );
   rect( 0, 0, width / 3, height );
   rect( 0, 0, width, height / 3 );
@@ -140,21 +178,30 @@ function drawEdges() {
 
 function drawTitle() {
 
+  const leftOffset = 150;
+  let topOffset = 250;
+  const lineHeight = 50;
+
+  noStroke();
   textSize( 24 );
+  
   fill( 50 );
   textStyle( BOLD );
-  text( 'Memor.io', 50, 50 );
-  textStyle( NORMAL );
+  text( 'Memor.io', CENTER.X - leftOffset, CENTER.Y - topOffset );
+  topOffset -= lineHeight;
+
   fill( 100 );
-  text( 'Press arrow keys/WASD', 50, 100 );
-  text( 'or click on edges to move.', 50, 150 );
+  textStyle( NORMAL );
+  text( 'Press arrow keys/WASD', CENTER.X - leftOffset, CENTER.X - topOffset );
+  topOffset -= lineHeight;
+  text( 'or click on edges to move.', CENTER.X - leftOffset, CENTER.X - topOffset );
 
 }
 
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
-  text( agent.char, agent.x, agent.y, agentSize )
+  text( agent.char, agent.x - agentSize / 2, agent.y - agentSize / 2, agentSize ); // drawn with coordinates in the center of character
 
 }
 
@@ -172,7 +219,26 @@ function move() {
 
   timer++;
 
-  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) ); // limit
+   // limit
+
+}
+
+function traverse() {
+
+  let newVel = createVector(mouseX - width/2, mouseY - height/2);
+  newVel.mult( 0.01 );
+  thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
+  thisAgent.x += thisVel.x;
+  thisAgent.y += thisVel.y;
+
+  // checking for bounds
+  if ( thisAgent.x <= 0 )           thisAgent.x = 0;
+  if ( thisAgent.x >= MAP_WIDTH )   thisAgent.x = MAP_WIDTH;
+  if ( thisAgent.y <= 0 )           thisAgent.y = 0;
+  if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
+
+  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+
 
 }
 
@@ -218,17 +284,15 @@ function keyPressed() {
 
 function mouseClicked() {
 
-  let mouse = [ mouseX, mouseY ];
+  // let mouse = [ mouseX, mouseY ];
 
-  console.log()
+  // if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
 
-  if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+  // if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
 
-  if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
 
-  if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
-
-  if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
 
 
 }
