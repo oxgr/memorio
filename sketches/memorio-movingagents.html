@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="360" >
     <title>memor.io</title>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols&display=swap');
+    </style>
     
     <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -20,7 +24,7 @@
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
-const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 number with input number of digits i.e. 0-f
+const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
 const randomUnicodeChar = () => { 
   let c, num;
   do { 
@@ -47,7 +51,10 @@ const thisAgent = {
   	y: 200
   }
 
-const memory = [ thisAgent ];   // memory includes all agents that are attached.
+
+
+
+// const memory = [ thisAgent ];   // memory includes all agents that are attached.
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
 const agentSize = 40;
@@ -59,6 +66,10 @@ const bg = "#fff";
 let textX = 100;
 let textY = 100;
 const lineHeight = 30;
+let font;
+
+let v1, v2;
+let speed = 2;
 
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
@@ -74,6 +85,13 @@ const client = mqtt.connect(server, {
 
 // Functions ++++++++++++++++++++++++++++++
 
+// function preload() {
+
+//   font = loadFont('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols:wght@100&display=swap');
+//   console.log(font);
+
+// }
+
 function setup() {
 
   createCanvas( windowWidth, windowHeight );
@@ -88,8 +106,13 @@ function setup() {
 
   fill('white');
   noStroke();
+
+  v1 = createVector();
+  v2 = createVector();
   
-  // textFont( 'Courier' );
+  // let font = loawdFont( '../assets/noto.ttf' );
+  // textFont( font );
+  // textFont( '../assets/noto.ttf' );
 
 }
 
@@ -98,16 +121,10 @@ function draw() {
   background( 255 ,20);
 
   drawEdges();
+  drawTitle();
 
-  textSize( 24 );
-  fill( 50 );
-  textStyle( BOLD );
-  text( 'Memor.io', 50, 50 );
-  textStyle( NORMAL );
-  fill( 100 );
-  text( 'Press arrow keys/WASD', 50, 100 );
-  text( 'or click on edges to move.', 50, 150 );
-
+  if ( mouseIsPressed ) move(); 
+  
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
 
@@ -121,12 +138,45 @@ function drawEdges() {
   rect( 0, height - ( height / 3 ), width, height / 3 );
 }
 
+function drawTitle() {
+
+  textSize( 24 );
+  fill( 50 );
+  textStyle( BOLD );
+  text( 'Memor.io', 50, 50 );
+  textStyle( NORMAL );
+  fill( 100 );
+  text( 'Press arrow keys/WASD', 50, 100 );
+  text( 'or click on edges to move.', 50, 150 );
+
+}
+
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
   text( agent.char, agent.x, agent.y, agentSize )
 
 }
+
+let timer = 0;
+
+function move() {
+
+  v1.set( thisAgent.x, thisAgent.y );
+  v2.set( mouseX, mouseY );
+
+  v1.add( v2.sub( v1 ).setMag( speed ) );
+
+  thisAgent.x = v1.x;
+  thisAgent.y = v1.y;
+
+  timer++;
+
+  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) ); // limit
+
+}
+
+// const updateThisAgent = () => world[0] = thisAgent;
 
 function keyPressed() {
 
@@ -159,6 +209,8 @@ function keyPressed() {
       thisAgent.color = randomB16Num( 6 );
 
   }
+
+  // updateThisAgent();
 
   client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
 
@@ -201,11 +253,13 @@ function messageReceived(topic, message) {
 
     case ( 'agent' ):
       let a = world.find( a => a.id == agent.id );
-      if ( a ) {
+      if ( a ) {                // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
+        a.char = agent.char;
+        a.color = agent.color;
         a.x = agent.x;
         a.y = agent.y;
       }
-      console.log( "id: %s, x: %i, y: %i", agent.id, agent.x, agent.y );    // formats like printf
+      console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
       break;
 
     case ( 'world' ):
