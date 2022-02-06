@@ -17,15 +17,30 @@
     		margin:  0;
         font-family: 'Arial';
     	}
+      #p5 {
+      width:  100%;
+      touch-action: none;
+      }
     </style>
 	</head>
 
 	<body>
+
+    <div id='p5'></div>
+
 		<script>
 
+// import Stats from 'https://unpkg.com/three@0.126.0/examples/jsm/libs/stats.module.js';
+// const stats = new Stats();
+
+// let canvas;
+
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
+
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
+
 const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
+
 const randomUnicodeChar = () => { 
   // let c, n, i;
   // let count = 0;
@@ -109,6 +124,21 @@ function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, 
     return testCanvas.toDataURL() != refCanvas.toDataURL();
 }
 
+const randomPastel = () => {
+
+  const threshold = 0.5;
+
+  const offset = 255 * threshold;
+  const range  = 255 - offset;
+
+  const r = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const g = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const b = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+
+  const color = r + g + b;
+
+  return color;
+}
 
 const decoder = new TextDecoder("utf-8");
 
@@ -121,8 +151,8 @@ const thisAgent = {
   	id: id,
   	char: char,
   	color: color,
-  	x: 200,
-  	y: 200
+  	x: 0,
+  	y: 0
   }
 
 
@@ -132,17 +162,25 @@ const thisAgent = {
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
 const agentSize = 40;
+const agentSizeHalf = agentSize / 2;
 
 const clientId = "memorio-" + id;
 
-const bg = "#fff";
+const bg = "#000";
 
 let textX = 100;
 let textY = 100;
-const lineHeight = 30;
 let font;
 
-let v1, v2;
+const MAP_SIZE = 2000;
+const MAP_WIDTH = MAP_SIZE;
+const MAP_HEIGHT = MAP_SIZE;
+const MAP_CENTER = {
+  X: MAP_WIDTH / 2,
+  Y: MAP_HEIGHT / 2
+}
+
+let v1, v2, thisVel, newVel;
 let speed = 2;
 
 // MQTT --------------------
@@ -168,21 +206,34 @@ const client = mqtt.connect(server, {
 
 function setup() {
 
-  createCanvas( windowWidth, windowHeight );
+  // const container = document.createElement( 'div' );
+  // container.setAttribute("id", "container");
+
+  // document.body.appendChild( container );
+
+  // container.appendChild( stats.dom );
+  // container.appendChild( canvas );
+  
+  const canvas = createCanvas( windowWidth, windowHeight, P2D );
+  canvas.parent('#p5');
 
   background( bg );
-
-  // setRandomPos( thisAgent );
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
   client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
 
-  fill('white');
-  noStroke();
+  // scale( 2000 / Math.min( width, height ) );
+
+
 
   v1 = createVector();
   v2 = createVector();
+  thisVel = createVector();
+  newVel = createVector();
+
+  thisAgent.x = MAP_WIDTH / 2;
+  thisAgent.y = MAP_HEIGHT / 2;
   
   // const noto = loadFont('../assets/noto.ttf');
   // textFont( noto );
@@ -192,19 +243,55 @@ function setup() {
 
 function draw() { 
 
-  background( 255 ,20);
+  background( 255 );
+  
 
-  drawEdges();
+
+  translate( width / 2, height / 2 );
+  translate( -thisAgent.x, -thisAgent.y );
+
+  drawMap();
+  // drawEdges();
   drawTitle();
+  drawFrameRate();
 
-  if ( mouseIsPressed ) move(); 
+  
+
+  // if ( mouseIsPressed )
+  traverse( ); 
   
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
 
+
+
+}
+
+// function mou
+
+function drawMap() {
+
+  fill( 255 );
+  rect( 0, 0, MAP_WIDTH, MAP_HEIGHT );
+
+  const mapStep = MAP_SIZE / 20;
+  stroke( 150 );
+  strokeWeight( 3 );
+
+  for ( let y = 0; y <= MAP_HEIGHT ; y += mapStep ) {
+    for ( let x = 0; x <= MAP_WIDTH ; x += mapStep ) {
+
+      point( x, y );
+
+    }
+  }
+
+  
+
 }
 
 function drawEdges() {
+  noStroke();
   fill( 235, 20 );
   rect( 0, 0, width / 3, height );
   rect( 0, 0, width, height / 3 );
@@ -214,21 +301,44 @@ function drawEdges() {
 
 function drawTitle() {
 
+  const leftOffset = 150;
+  let topOffset = 250;
+  const lineHeight = 50;
+
+  noStroke();
   textSize( 24 );
+  
   fill( 50 );
   textStyle( BOLD );
-  text( 'Memor.io', 50, 50 );
-  textStyle( NORMAL );
+  text( 'Memor.io', MAP_CENTER.X - leftOffset, MAP_CENTER.Y - topOffset );
+  topOffset -= lineHeight;
+
   fill( 100 );
-  text( 'Press arrow keys/WASD', 50, 100 );
-  text( 'or click on edges to move.', 50, 150 );
+  textStyle( NORMAL );
+  text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+  topOffset -= lineHeight;
+  text( 'and share your memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+
+}
+
+let fr = "";
+
+function drawFrameRate() {
+
+  if( frameCount % 20 == 0 ) fr = frameRate().toFixed(0).toString() + ' fps';
+
+  noStroke();
+  textSize( 18 );
+  fill( 50 );
+
+  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 2 ));
 
 }
 
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
-  text( agent.char, agent.x, agent.y, agentSize )
+  text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
 
 }
 
@@ -246,7 +356,30 @@ function move() {
 
   timer++;
 
-  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) ); // limit
+   // limit
+
+}
+
+let enableMouse = false;
+
+function traverse() {
+
+  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 } // lock movement before first click or if no touch.
+
+  newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height );
+  newVel.mult( 10 );
+  thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
+  thisAgent.x += thisVel.x;
+  thisAgent.y += thisVel.y;
+
+  // checking for bounds
+  if ( thisAgent.x <= 0 )           thisAgent.x = 0;
+  if ( thisAgent.x >= MAP_WIDTH )   thisAgent.x = MAP_WIDTH;
+  if ( thisAgent.y <= 0 )           thisAgent.y = 0;
+  if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
+
+  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+
 
 }
 
@@ -280,7 +413,7 @@ function keyPressed() {
 
     case( 32 ):
       thisAgent.char = randomUnicodeChar();
-      thisAgent.color = randomB16Num( 6 );
+      thisAgent.color = randomPastel( );
 
   }
 
@@ -290,19 +423,45 @@ function keyPressed() {
 
 }
 
+function mousePressed() { if ( !enableMouse ) enableMouse = true; }
+
+function mouseReleased() {}
+
+function touchStarted() {
+
+  enableMouse = true;
+
+}
+
+function touchEnded() {
+
+  enableMouse = false;
+
+}
+
 function mouseClicked() {
 
-  let mouse = [ mouseX, mouseY ];
+  const mousePos = createVector( mouseX, mouseY );
+  const centrePos = createVector( width/2, height/2 );
 
-  console.log()
+  console.log( mousePos.dist( centrePos ));
 
-  if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+  if ( mousePos.dist( centrePos ) < agentSizeHalf ) {
+    thisAgent.char = randomUnicodeChar();
+    thisAgent.color = randomPastel( );
+  }
 
-  if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+  // console.log( 'x: %i, y: %i', mouseX, mouseY );
 
-  if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
+  // let mouse = [ mouseX, mouseY ];
 
-  if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+  // if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+
+  // if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+
+  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
+
+  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
 
 
 }
@@ -311,6 +470,8 @@ function messageReceived(topic, message) {
 
   topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
   message = decoder.decode(message);  // decode array buffer.
+
+  if ( topic == 'chat' ) { console.log( message ); return; }
 
   let agent = JSON.parse( message );    
   
@@ -333,7 +494,7 @@ function messageReceived(topic, message) {
         a.x = agent.x;
         a.y = agent.y;
       }
-      console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
+      // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
       break;
 
     case ( 'world' ):
@@ -344,11 +505,7 @@ function messageReceived(topic, message) {
     case ( 'disconnect' ):
       let index = world.findIndex( a => a.id == agent.id );
       if ( index > -1 ) world.splice( index, 1 );
-      console.log( 'someone disconnected! new owrld = ', world);
-      break;
-
-    case ( 'chat' ):
-      console.log( message );
+      console.log( 'someone disconnected! new world = ', world);
       break;
 
   }
