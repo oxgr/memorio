@@ -35,19 +35,42 @@
 // let canvas;
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
+
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
+
 const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
+
 const randomUnicodeChar = () => { 
-  let c, num;
-  do { 
-    // num = parseInt( randomB16Num( 3 ), 16 );
-    num = Math.floor( Math.random() * 14000 );
-    c = String.fromCodePoint( num );
-    console.log( c, num );
+
+    const range = 14000;
+    let c, num;
+
+    do { 
+      // num = parseInt( randomB16Num( 3 ), 16 );
+      num = Math.floor( Math.random() * range );
+      c = String.fromCodePoint( num );
+      console.log( c, num );
+    }
+      while ( num < 32 || ( 65 < num && num < 880 ));   // checks to avoid Latin characters
+
+    return c;
   }
-    while ( num < 32 || ( 65 < num && num < 880 ));
-  return c;
-  }
+
+const randomPastel = () => {
+
+  const threshold = 0.5;
+
+  const offset = 255 * threshold;
+  const range  = 255 - offset;
+
+  const r = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const g = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const b = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+
+  const color = r + g + b;
+
+  return color;
+}
 
 const decoder = new TextDecoder("utf-8");
 
@@ -71,6 +94,7 @@ const thisAgent = {
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
 const agentSize = 40;
+const agentSizeHalf = agentSize / 2;
 
 const clientId = "memorio-" + id;
 
@@ -83,12 +107,12 @@ let font;
 const MAP_SIZE = 2000;
 const MAP_WIDTH = MAP_SIZE;
 const MAP_HEIGHT = MAP_SIZE;
-const CENTER = {
+const MAP_CENTER = {
   X: MAP_WIDTH / 2,
   Y: MAP_HEIGHT / 2
 }
 
-let v1, v2, thisVel;
+let v1, v2, thisVel, newVel;
 let speed = 2;
 
 // MQTT --------------------
@@ -131,10 +155,14 @@ function setup() {
   client.on('message', (topic, message) => messageReceived(topic, message) );
   client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
 
+  // scale( 2000 / Math.min( width, height ) );
+
+
 
   v1 = createVector();
   v2 = createVector();
   thisVel = createVector();
+  newVel = createVector();
 
   thisAgent.x = MAP_WIDTH / 2;
   thisAgent.y = MAP_HEIGHT / 2;
@@ -167,7 +195,11 @@ function draw() {
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
 
+
+
 }
+
+function mouse
 
 function drawMap() {
 
@@ -210,14 +242,14 @@ function drawTitle() {
   
   fill( 50 );
   textStyle( BOLD );
-  text( 'Memor.io', CENTER.X - leftOffset, CENTER.Y - topOffset );
+  text( 'Memor.io', MAP_CENTER.X - leftOffset, MAP_CENTER.Y - topOffset );
   topOffset -= lineHeight;
 
   fill( 100 );
   textStyle( NORMAL );
-  text( 'Press arrow keys/WASD', CENTER.X - leftOffset, CENTER.X - topOffset );
+  text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
   topOffset -= lineHeight;
-  text( 'or click on edges to move.', CENTER.X - leftOffset, CENTER.X - topOffset );
+  text( 'and share your memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
 
 }
 
@@ -225,20 +257,20 @@ let fr = "";
 
 function drawFrameRate() {
 
-  if( frameCount % 20 == 0 ) fr = frameRate().toFixed(0).toString();
+  if( frameCount % 20 == 0 ) fr = frameRate().toFixed(0).toString() + ' fps';
 
   noStroke();
   textSize( 18 );
   fill( 50 );
 
-  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 3 ));
+  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 2 ));
 
 }
 
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
-  text( agent.char, agent.x - agentSize / 2, agent.y - agentSize / 2, agentSize ); // drawn with coordinates in the center of character
+  text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
 
 }
 
@@ -264,10 +296,10 @@ let enableMouse = false;
 
 function traverse() {
 
-  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 }
+  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 } // lock movement before first click or if no touch.
 
-  let newVel = createVector(mouseX - width/2, mouseY - height/2);
-  newVel.mult( 0.01 );
+  newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height );
+  newVel.mult( 10 );
   thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
   thisAgent.x += thisVel.x;
   thisAgent.y += thisVel.y;
@@ -313,7 +345,7 @@ function keyPressed() {
 
     case( 32 ):
       thisAgent.char = randomUnicodeChar();
-      thisAgent.color = randomB16Num( 6 );
+      thisAgent.color = randomPastel( );
 
   }
 
@@ -341,10 +373,17 @@ function touchEnded() {
 
 function mouseClicked() {
 
-  thisAgent.char = randomUnicodeChar();
-  thisAgent.color = randomB16Num( 6 );
+  const mousePos = createVector( mouseX, mouseY );
+  const centrePos = createVector( width/2, height/2 );
 
-  console.log( 'x: %i, y: %i', mouseX, mouseY );
+  console.log( mousePos.dist( centrePos ));
+
+  if ( mousePos.dist( centrePos ) < agentSizeHalf ) {
+    thisAgent.char = randomUnicodeChar();
+    thisAgent.color = randomPastel( );
+  }
+
+  // console.log( 'x: %i, y: %i', mouseX, mouseY );
 
   // let mouse = [ mouseX, mouseY ];
 
