@@ -95,7 +95,7 @@ const randomUnicodeChar = () => {
  * If the second argument is left out, it defaults to the font of the <body> element.
  * The third argument isn't used under normal circumstances, it's just used internally to avoid infinite recursion.
  * */
-function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, recursion = false){
+function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, recursion = false) {
     //Create the canvases
     // document.createElement("canvas");
     let testCanvas = document.createElement("canvas");
@@ -110,10 +110,12 @@ function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, 
     testContext.fillText(character, 0, 100);
     refContext.fillText('\uffff', 0, 100);
     
-    //Firefox renders unsupported characters by placing their character code inside the rectangle making each unsupported character look different.
-    //As a workaround, in Firefox, we hide the inside of the character by placing a black rectangle on top of it.
-    //The rectangle we use to hide the inside has an offset of 10px so it can still see part of the character, reducing the risk of false positives.
-    //We check for Firefox and browers that behave similarly by checking if U+FFFE is supported, since U+FFFE is, just like U+FFFF, guaranteed not to be supported.
+    /**
+    * Firefox renders unsupported characters by placing their character code inside the rectangle making each unsupported character look different.
+    * As a workaround, in Firefox, we hide the inside of the character by placing a black rectangle on top of it.
+    * The rectangle we use to hide the inside has an offset of 10px so it can still see part of the character, reducing the risk of false positives.
+    * We check for Firefox and browers that behave similarly by checking if U+FFFE is supported, since U+FFFE is, just like U+FFFF, guaranteed not to be supported.
+    * */
     if(!recursion && hasGlyph('\ufffe', font, true)){
         testContext.fillStyle = refContext.fillStyle = "black";
         testContext.fillRect(10, 10, 80, 80);
@@ -374,10 +376,12 @@ function move() {
 }
 
 let enableMouse = false;
+let messageFreq = 10;
+let messageStep = 60 / messageFreq;
 
 function traverse() {
 
-  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 } // lock movement before first click or if no touch.
+  if ( !enableMouse ) { return; } // lock movement before first click or if no touch.
 
   newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height );
   newVel.mult( 10 );
@@ -391,7 +395,7 @@ function traverse() {
   if ( thisAgent.y <= 0 )           thisAgent.y = 0;
   if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
 
-  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+  if ( frameCount % messageStep == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
 
 
 }
