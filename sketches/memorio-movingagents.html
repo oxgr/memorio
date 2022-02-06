@@ -16,11 +16,23 @@
     	body {
     		margin:  0;
     	}
+      #p5 {
+      width:  100%;
+      touch-action: none;
+      }
     </style>
 	</head>
 
 	<body>
+
+    <div id='p5'></div>
+
 		<script>
+
+// import Stats from 'https://unpkg.com/three@0.126.0/examples/jsm/libs/stats.module.js';
+// const stats = new Stats();
+
+// let canvas;
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
@@ -28,9 +40,10 @@ const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, dig
 const randomUnicodeChar = () => { 
   let c, num;
   do { 
-    num = parseInt( randomB16Num( 3 ), 16 );
-    console.log( num );
+    // num = parseInt( randomB16Num( 3 ), 16 );
+    num = Math.floor( Math.random() * 14000 );
     c = String.fromCodePoint( num );
+    console.log( c, num );
   }
     while ( num < 32 || ( 65 < num && num < 880 ));
   return c;
@@ -101,11 +114,18 @@ const client = mqtt.connect(server, {
 
 function setup() {
 
-  createCanvas( windowWidth, windowHeight );
+  // const container = document.createElement( 'div' );
+  // container.setAttribute("id", "container");
+
+  // document.body.appendChild( container );
+
+  // container.appendChild( stats.dom );
+  // container.appendChild( canvas );
+  
+  const canvas = createCanvas( windowWidth, windowHeight, P2D );
+  canvas.parent('#p5');
 
   background( bg );
-
-  // setRandomPos( thisAgent );
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
@@ -122,12 +142,14 @@ function setup() {
   // let font = loawdFont( '../assets/noto.ttf' );
   // textFont( font );
   // textFont( '../assets/noto.ttf' );
-
+  textFont( 'Courier' );
 }
 
 function draw() { 
 
   background( 255 );
+  
+
 
   translate( width / 2, height / 2 );
   translate( -thisAgent.x, -thisAgent.y );
@@ -135,11 +157,12 @@ function draw() {
   drawMap();
   // drawEdges();
   drawTitle();
+  drawFrameRate();
 
   
 
   // if ( mouseIsPressed )
-    traverse( ); 
+  traverse( ); 
   
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
@@ -198,6 +221,20 @@ function drawTitle() {
 
 }
 
+let fr = "";
+
+function drawFrameRate() {
+
+  if( frameCount % 20 == 0 ) fr = frameRate().toFixed(0).toString();
+
+  noStroke();
+  textSize( 18 );
+  fill( 50 );
+
+  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 3 ));
+
+}
+
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
@@ -223,7 +260,11 @@ function move() {
 
 }
 
+let enableMouse = false;
+
 function traverse() {
+
+  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 }
 
   let newVel = createVector(mouseX - width/2, mouseY - height/2);
   newVel.mult( 0.01 );
@@ -282,7 +323,18 @@ function keyPressed() {
 
 }
 
+function mousePressed() {
+
+  if ( !enableMouse ) enableMouse = true;
+
+}
+
 function mouseClicked() {
+
+  thisAgent.char = randomUnicodeChar();
+  thisAgent.color = randomB16Num( 6 );
+
+  console.log( 'x: %i, y: %i', mouseX, mouseY );
 
   // let mouse = [ mouseX, mouseY ];
 
@@ -301,6 +353,8 @@ function messageReceived(topic, message) {
 
   topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
   message = decoder.decode(message);  // decode array buffer.
+
+  if ( topic == 'chat' ) { console.log( message ); return; }
 
   let agent = JSON.parse( message );    
   
@@ -323,7 +377,7 @@ function messageReceived(topic, message) {
         a.x = agent.x;
         a.y = agent.y;
       }
-      console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
+      // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
       break;
 
     case ( 'world' ):
@@ -334,11 +388,7 @@ function messageReceived(topic, message) {
     case ( 'disconnect' ):
       let index = world.findIndex( a => a.id == agent.id );
       if ( index > -1 ) world.splice( index, 1 );
-      console.log( 'someone disconnected! new owrld = ', world);
-      break;
-
-    case ( 'chat' ):
-      console.log( message );
+      console.log( 'someone disconnected! new world = ', world);
       break;
 
   }
