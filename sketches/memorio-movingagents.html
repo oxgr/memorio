@@ -42,48 +42,86 @@ const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPo
 const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
 
 const randomUnicodeChar = () => { 
-  // let c, n, i;
-  // let count = 0;
-  // do { 
-  //   n = Math.floor( Math.random() * 2 ).toString() + randomB16Num( 4 );
-  //   i = parseInt( n, 16 );
-  //   // i = Math.floor(Math.random() * 20000);
-  //   c = String.fromCodePoint( i );
-  //   count++;
-  // } while ( !hasGlyph(c) );
+
+  /********** Even-ish distribution *************/
+
+  let c, n, i;
+  let d1, d2, d345;
+  let count = 0;
+  do { 
+    d1 = Math.floor( Math.random() * 2 ).toString();
+
+    /** distributed **/
+    d2 = Math.floor( Math.random() * 2 );
+    if ( d1 == 1 || d2 == 1 ) d2 = randomB16Num( 1 );
+    d3 = Math.floor( Math.random() * 5 );
+    if ( d1 == 1 || d2 == 1 || d3 > 1) d3 = randomB16Num( 1 );
+    d45 = randomB16Num( 2 );
+    n = d1 + d2 + d3 + d45;
+
+    /** random **/
+    // n = d1 + randomB16Num( 4 );
+
+    i = parseInt( n, 16 );
+    // i = Math.floor(Math.random() * 20000);
+    c = String.fromCodePoint( i );
+    count++;
+  } while ( !hasGlyph(c) || i < 32 );
 
   // console.log( c.codePointAt(0).toString(16), c );
-  // if ( count > 1 ) console.log( 'attempts: %i', count );
+  if ( count > 1 ) console.log( 'attempts: %i', count );
 
-  
-  const availableIndex = [
-    // ['0', '1', '2', '3', '4', 'a', 'f'],
-    ['0', '1', '2', '3', '4', 'a', 'f'],
-    ['0', '1', '2', '3', '4', '6', '8', 'b', 'c', 'd', 'e', 'f']
-    // [ '2']
-  ]
-  const d30fIndex = ['a', 'b', 'c', 'd', 'e', 'f'];
+  // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
 
-  let c, n;
-  let d1, d2, d3, d45;
-  do {
-    d1 = Math.floor( Math.random() * 2 ); // 0 or 1, but higher chance on 0;
-    //  d1 = 0;
-    d2 = availableIndex[ d1 ][ Math.floor( Math.random() * availableIndex[ d1 ].length ) ];
-    //  d345 = randomB16Num( 3 );
-    if ( d1 == 0 ) {
-    d3 = d30fIndex[ Math.floor( Math.random() * d30fIndex.length ) ];
-    } else {
-      d3 = 0;
-    }
-     d45 = randomB16Num( 2 );
+  /*************** Emojis-ish ******************/
 
-    n = parseInt( (d1 + d2 + d3 + d45), 16 );
-    c = String.fromCodePoint( n );
-  } while (!hasGlyph(c));
+  // let c, n;
+  // let d1, d2, d3, d45;
+  // do {
+  //   d1 = 1;
+  //   d2 = 'f';
+  //   d3 = randomB16Num( 1 );
+  //   d45 = randomB16Num( 2 );
+
+  //   n = parseInt( (d1 + d2 + d3 + d45), 16 );
+  //   c = String.fromCodePoint( n );
+  // } while (!hasGlyph(c));
 
   // console.log( hasGlyph( c ));
-  console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+  // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+
+
+  /************* Filtered index ***** *********/
+
+  // const availableIndex = [
+  //   // ['0', '1', '2', '3', '4', 'a', 'f'],
+  //   ['0', '1', '2', '3', '4', 'a', 'f'],
+  //   // ['0', '1', '2', '3', '4', '6', '8', 'b', 'c', 'd', 'e', 'f']
+  //   [ 'f']
+  // ]
+  // const d30fIndex = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+  // let c, n;
+  // let d1, d2, d3, d45;
+  // do {
+  //   d1 = Math.floor( Math.random() * 2 ); // 0 or 1, but higher chance on 0;
+  //    d1 = 1;
+  //   d2 = availableIndex[ d1 ][ Math.floor( Math.random() * availableIndex[ d1 ].length ) ];
+  //   //  d345 = randomB16Num( 3 );
+  //   // if ( d1 == 0 ) {
+  //   // d3 = d30fIndex[ Math.floor( Math.random() * d30fIndex.length ) ];
+  //   // } else {
+  //   //   d3 = 0;
+  //   // }
+  //   d3 = randomB16Num( 1 );
+  //   d45 = randomB16Num( 2 );
+
+  //   n = parseInt( (d1 + d2 + d3 + d45), 16 );
+  //   c = String.fromCodePoint( n );
+  // } while (!hasGlyph(c));
+
+  // console.log( hasGlyph( c ));
+  // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
 
   return c;
   }
@@ -151,7 +189,6 @@ const randomPastel = () => {
   // const b = values.splice( Math.floor( Math.random() * 1 ), 1 ).toString(16);
 
   const color = r + g + b;
-  console.log( color )
 
   return color;
 }
@@ -170,24 +207,19 @@ const thisAgent = {
   	y: 0
   }
 
-
-
-
 // const memory = [ thisAgent ];   // memory includes all agents that are attached.
 const world  = [ thisAgent ];   // world includes all agents that are connected.
 
-const agentSize = 40;
-const agentSizeHalf = agentSize / 2;
+const AGENT_SIZE = 40;
+const AGENT_SIZE_HALF = AGENT_SIZE / 2;
 
 const clientId = "memorio-" + id;
 
-const bg = "#000";
+const OUTER_BACKGROUND = "#ccddee";
 
-let textX = 100;
-let textY = 100;
-let font;
-
-const MAP_SIZE = 2000;
+const MAP_SIZE = 4000;
+const MAP_SHAPE = 'CIRCLE' // CIRCLE or RECT
+const MAP_RADIUS = MAP_SIZE/2;
 const MAP_WIDTH = MAP_SIZE;
 const MAP_HEIGHT = MAP_SIZE;
 const MAP_CENTER = {
@@ -195,8 +227,24 @@ const MAP_CENTER = {
   Y: MAP_HEIGHT / 2
 }
 
+// const MAP = {
+//   SIZE  :2000;
+//   SHAPE :'CIRCLE' // CIRCLE or RECT
+//   RADIUS: MAP_SIZE;
+//   WIDTH : MAP_SIZE;
+//   HEIGHT: MAP_SIZE;
+//   CENTER: {
+//     X: MAP_WIDTH / 2,
+//     Y: MAP_HEIGHT / 2
+//   }
+// }
+
 let v1, v2, thisVel, newVel;
 let speed = 2;
+
+let font;
+
+let showFrameRate = false;
 
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
@@ -231,25 +279,24 @@ function setup() {
   
   const canvas = createCanvas( windowWidth, windowHeight, P2D );
   canvas.parent('#p5');
-
-  background( bg );
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
   client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
+  updateStep( messageFreq );
 
   // scale( 2000 / Math.min( width, height ) );
 
-
-
-  v1 = createVector();
-  v2 = createVector();
+  v1      = createVector();
+  v2      = createVector();
   thisVel = createVector();
-  newVel = createVector();
-
+  newVel  = createVector();
+  pos     = createVector()
+  maxMag  = createVector( 0, MAP_RADIUS ).mag();
+  
   thisAgent.x = MAP_WIDTH / 2;
   thisAgent.y = MAP_HEIGHT / 2;
-  
+
   // const noto = loadFont('../assets/noto.ttf');
   // textFont( noto );
   textFont( getComputedStyle(document.body).fontFamily );
@@ -258,24 +305,20 @@ function setup() {
 
 function draw() { 
 
-  background( 255 );
+  background( OUTER_BACKGROUND );
   
-
-
   translate( width / 2, height / 2 );
   translate( -thisAgent.x, -thisAgent.y );
 
   drawMap();
   // drawEdges();
   drawTitle();
-  drawFrameRate();
-
-  
+  if ( showFrameRate ) drawFrameRate();
 
   // if ( mouseIsPressed )
   traverse( ); 
   
-  textSize( agentSize );
+  textSize( AGENT_SIZE );
   for ( a of world ) drawAgent( a );
 
 
@@ -287,11 +330,12 @@ function draw() {
 function drawMap() {
 
   fill( 255 );
-  rect( 0, 0, MAP_WIDTH, MAP_HEIGHT );
+  if ( MAP_SHAPE == 'RECT' )   rect( 0, 0, MAP_WIDTH, MAP_HEIGHT );
+  else if ( MAP_SHAPE == 'CIRCLE' ) circle( MAP_CENTER.X, MAP_CENTER.X, MAP_SIZE);
 
   const mapStep = MAP_SIZE / 20;
-  stroke( 150 );
-  strokeWeight( 3 );
+  stroke( OUTER_BACKGROUND );
+  strokeWeight( 10 );
 
   for ( let y = 0; y <= MAP_HEIGHT ; y += mapStep ) {
     for ( let x = 0; x <= MAP_WIDTH ; x += mapStep ) {
@@ -300,9 +344,6 @@ function drawMap() {
 
     }
   }
-
-  
-
 }
 
 function drawEdges() {
@@ -344,16 +385,16 @@ function drawFrameRate() {
 
   noStroke();
   textSize( 18 );
-  fill( 50 );
+  fill( 100 );
 
-  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 2 ));
+  text( fr, thisAgent.x + 50, thisAgent.y);
 
 }
 
 function drawAgent( agent ) {
 
   fill( "#" + agent.color );
-  text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
+  text( agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE ); // drawn with coordinates in the center of character
 
 }
 
@@ -376,67 +417,86 @@ function move() {
 }
 
 let enableMouse = false;
-let messageFreq = 10;
-let messageStep = 60 / messageFreq;
+let messageFreq = 10;   // messages per second given 60fps
+let messageStep = 0;
+const velThreshold = 0.01;
+
+function updateStep( freq ) { messageStep = 60 / freq; }
+
+let maxMag, pos;
 
 function traverse() {
 
-  if ( !enableMouse ) { return; } // lock movement before first click or if no touch.
-
-  newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height );
+  if ( !enableMouse ) { newVel.set( 0, 0 ); } // lock movement before first click or if no touch.
+  else { newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height ); }
   newVel.mult( 10 );
   thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
   thisAgent.x += thisVel.x;
   thisAgent.y += thisVel.y;
 
-  // checking for bounds
-  if ( thisAgent.x <= 0 )           thisAgent.x = 0;
-  if ( thisAgent.x >= MAP_WIDTH )   thisAgent.x = MAP_WIDTH;
-  if ( thisAgent.y <= 0 )           thisAgent.y = 0;
-  if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
+  if ( MAP_SHAPE == 'RECT') {
 
-  if ( frameCount % messageStep == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+    if ( thisAgent.x <= 0 )           thisAgent.x = 0;
+    if ( thisAgent.x >= MAP_WIDTH )   thisAgent.x = MAP_WIDTH;
+    if ( thisAgent.y <= 0 )           thisAgent.y = 0;
+    if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
+
+  } else if (MAP_SHAPE == 'CIRCLE') {
+
+      pos.set( thisAgent.x - MAP_CENTER.X, thisAgent.y - MAP_CENTER.Y );
+      pos.limit( maxMag - AGENT_SIZE );
+
+      thisAgent.x = pos.x + MAP_CENTER.X;
+      thisAgent.y = pos.y + MAP_CENTER.Y;
+
+  }
+
+  if (
+    frameCount % messageStep == 0
+    && ( thisVel.x > velThreshold || thisVel.y > velThreshold )
+    )
+    client.publish( "/memorio/update", JSON.stringify( thisAgent ) );
 
 
 }
 
-// const updateThisAgent = () => world[0] = thisAgent;
-
 function keyPressed() {
 
-  // thisAgent.char += 1;
+  console.log( keyCode );
 
   switch ( keyCode ) {
 
     case ( 37 ):
     case ( 65 ):
-      thisAgent.x -= agentSize;
+      thisAgent.x -= AGENT_SIZE;
       break;
 
     case ( 38 ):
     case ( 87 ):
-      thisAgent.y -= agentSize;
+      thisAgent.y -= AGENT_SIZE;
       break;
     
     case ( 39 ):
     case ( 68 ):
-      thisAgent.x += agentSize;
+      thisAgent.x += AGENT_SIZE;
       break;
     
     case ( 40 ):
     case ( 83 ):
-      thisAgent.y += agentSize;
+      thisAgent.y += AGENT_SIZE;
       break;
 
-    case( 32 ):
+    case ( 32 ):
       thisAgent.char = randomUnicodeChar();
       thisAgent.color = randomPastel( );
+      break;
+
+    case ( 70 ):
+      showFrameRate = !showFrameRate;
 
   }
 
-  // updateThisAgent();
-
-  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+  client.publish( "/memorio/update", JSON.stringify( thisAgent ) );
 
 }
 
@@ -461,7 +521,7 @@ function mouseClicked() {
   const mousePos = createVector( mouseX, mouseY );
   const centrePos = createVector( width/2, height/2 );
 
-  if ( mousePos.dist( centrePos ) < agentSizeHalf ) {
+  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) {
     thisAgent.char = randomUnicodeChar();
     thisAgent.color = randomPastel( );
   }
@@ -470,23 +530,26 @@ function mouseClicked() {
 
   // let mouse = [ mouseX, mouseY ];
 
-  // if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+  // if ( mouse[0] < width / 3 ) thisAgent.x -= AGENT_SIZE;
 
-  // if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+  // if ( mouse[1] < height / 3 ) thisAgent.y -= AGENT_SIZE;
 
-  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
+  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += AGENT_SIZE;
 
-  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += AGENT_SIZE;
 
 
 }
 
-function messageReceived(topic, message) {
+function messageReceived(topics, message) {
 
-  topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
+  topics = topics.split( '/' );
   message = decoder.decode(message);  // decode array buffer.
 
+  const topic  = topics[2];     // get the first sub branch of memorio.     
+  
   if ( topic == 'chat' ) { console.log( message ); return; }
+  if ( topic == 'limit' ) { updateStep( parseInt( message ) ); return; }
 
   let agent = JSON.parse( message );    
   
@@ -501,7 +564,8 @@ function messageReceived(topic, message) {
       console.log( 'new connection! world = ', world );
       break;
 
-    case ( 'agent' ):
+    case ( 'update' ):
+      // const subtopic = topics[3]; 
       let a = world.find( a => a.id == agent.id );
       if ( a ) {                // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
         a.char = agent.char;
