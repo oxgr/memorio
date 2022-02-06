@@ -11,6 +11,7 @@
     <style>
     	body {
     		margin:  0;
+        font-family: 'Arial';
     	}
     </style>
 	</head>
@@ -22,15 +23,88 @@ const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
 const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 number with input number of digits i.e. 0-f
 const randomUnicodeChar = () => { 
-  let c, num;
-  do { 
-    num = parseInt( randomB16Num( 3 ), 16 );
-    console.log( num );
-    c = String.fromCodePoint( num );
-  }
-    while ( num < 32 || ( 65 < num && num < 880 ));
+  // let c, n, i;
+  // let count = 0;
+  // do { 
+  //   n = Math.floor( Math.random() * 2 ).toString() + randomB16Num( 4 );
+  //   i = parseInt( n, 16 );
+  //   // i = Math.floor(Math.random() * 20000);
+  //   c = String.fromCodePoint( i );
+  //   count++;
+  // } while ( !hasGlyph(c) );
+
+  // console.log( c.codePointAt(0).toString(16), c );
+  // if ( count > 1 ) console.log( 'attempts: %i', count );
+
+  
+  const availableIndex = [
+    ['0', '1', '2', '3', '4', 'a', 'f'],
+    // ['f'],
+    ['0', '1', '2', '3', '4', '6', '8', 'b', 'c', 'd', 'e', 'f']
+    // [ '2']
+  ]
+  const d20fIndex = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+  let c, n;
+  let d1, d2, d3, d45;
+  do {
+    d1 = Math.floor( Math.random() * 2 ); // 0 or 1, but higher chance on 0;
+    //  d1 = 0;
+    d2 = availableIndex[ d1 ][ Math.floor( Math.random() * availableIndex[ d1 ].length ) ];
+    //  d345 = randomB16Num( 3 );
+    if ( d1 == 0 ) {
+    d3 = d20fIndex[ Math.floor( Math.random() * d20fIndex.length ) ];
+    } else {
+      d3 = 0;
+    }
+     d45 = randomB16Num( 2 );
+
+    n = parseInt( (d1 + d2 + d3 + d45), 16 );
+    c = String.fromCodePoint( n );
+  } while (!hasGlyph(c));
+
+  // console.log( hasGlyph( c ));
+  console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+
   return c;
   }
+
+// The following is taken from: https://stackoverflow.com/questions/1911000/detecting-individual-unicode-character-support-with-javascript
+
+/**
+ * The first argument is the character you want to test, and the second argument is the font you want to test it in.
+ * If the second argument is left out, it defaults to the font of the <body> element.
+ * The third argument isn't used under normal circumstances, it's just used internally to avoid infinite recursion.
+ * */
+function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, recursion = false){
+    //Create the canvases
+    // document.createElement("canvas");
+    let testCanvas = document.createElement("canvas");
+    let refCanvas = document.createElement("canvas");
+    testCanvas.width = refCanvas.width = testCanvas.height = refCanvas.height = 150;
+
+    //Render the characters
+    let testContext = testCanvas.getContext("2d");
+    let refContext = refCanvas.getContext("2d");
+    testContext.font = refContext.font = "100px " + font;
+    testContext.fillStyle = refContext.fillStyle = "black";
+    testContext.fillText(character, 0, 100);
+    refContext.fillText('\uffff', 0, 100);
+    
+    //Firefox renders unsupported characters by placing their character code inside the rectangle making each unsupported character look different.
+    //As a workaround, in Firefox, we hide the inside of the character by placing a black rectangle on top of it.
+    //The rectangle we use to hide the inside has an offset of 10px so it can still see part of the character, reducing the risk of false positives.
+    //We check for Firefox and browers that behave similarly by checking if U+FFFE is supported, since U+FFFE is, just like U+FFFF, guaranteed not to be supported.
+    if(!recursion && hasGlyph('\ufffe', font, true)){
+        testContext.fillStyle = refContext.fillStyle = "black";
+        testContext.fillRect(10, 10, 80, 80);
+        refContext.fillRect(10, 10, 80, 80);
+    }
+
+    //Check if the canvases are identical
+    return testCanvas.toDataURL() != refCanvas.toDataURL();
+}
+
 
 const decoder = new TextDecoder("utf-8");
 
@@ -81,7 +155,9 @@ function setup() {
   fill('white');
   noStroke();
   
-  // textFont( 'Courier' );
+  // const noto = loadFont('../assets/noto.ttf');
+  // textFont( noto );
+  textFont( 'Arial' );
 
 }
 
