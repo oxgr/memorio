@@ -323,9 +323,19 @@ function keyPressed() {
 
 }
 
-function mousePressed() {
+function mousePressed() { if ( !enableMouse ) enableMouse = true; }
 
-  if ( !enableMouse ) enableMouse = true;
+function mouseReleased() {}
+
+function touchStarted() {
+
+  enableMouse = true;
+
+}
+
+function touchEnded() {
+
+  enableMouse = false;
 
 }
 
