@@ -512,9 +512,9 @@ function mousePressed() { }
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = !enableMouse; return false; }
+function touchStarted() { enableMouse = !enableMouse; randomiseCharCol(); return false; }
 
-function touchEnded() { enableMouse = false; }
+function touchEnded() { enableMouse = false;  }
 
 document.addEventListener('gesturestart', function(e) {
   e.preventDefault();
@@ -523,6 +523,12 @@ document.addEventListener('gesturestart', function(e) {
 function mouseClicked() {
 
   enableMouse = !enableMouse;
+
+  randomiseCharCol();
+
+}
+
+function randomiseCharCol() {
 
   const mousePos = createVector( mouseX, mouseY );
   const centrePos = createVector( width/2, height/2 );
