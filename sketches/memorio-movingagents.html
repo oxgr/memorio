@@ -516,7 +516,7 @@ let touchStartFrame;
 let touchClickThreshold = 30;
 
 function touchStarted() {
-  enableMouse = !enableMouse;
+  enableMouse = true;
   // randomiseCharCol();
   touchStartFrame = frameCount;
   return false;
@@ -524,7 +524,8 @@ function touchStarted() {
 
 function touchEnded() {
   if ( frameCount - touchStartFrame < touchClickThreshold) {
-    mouseClicked();
+    randomiseCharCol();
+    // enableMouse = true;
     return;
   }
   enableMouse = false; 
