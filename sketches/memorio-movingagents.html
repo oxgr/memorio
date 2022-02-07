@@ -512,7 +512,7 @@ function mousePressed() { }
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = true; }
+function touchStarted() { enableMouse = true; return false; }
 
 function touchEnded() { enableMouse = false; }
 
