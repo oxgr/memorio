@@ -19,7 +19,7 @@
     	}
       #p5 {
       width:  100%;
-      touch-action: none;
+      /*touch-action: none;*/
       }
     </style>
 	</head>
@@ -325,10 +325,6 @@ function draw() {
   textSize( AGENT_SIZE );
   for ( a of world ) drawAgent( a );
 
-
-
-
-
 }
 
 // function mou
@@ -433,7 +429,7 @@ let messageFreq = 10;   // messages per second given 60fps
 let messageStep = 0;
 const velThreshold = 0.01;
 
-function updateStep( freq ) { messageStep = 60 / freq; }
+function updateStep( freq ) { messageStep = 60 / freq; console.log}
 
 let maxMag, pos;
 
@@ -512,11 +508,11 @@ function keyPressed() {
 
 }
 
-function mousePressed() { enableMouse = !enableMouse; }
+function mousePressed() { enableMouse = !enableMouse; return false;}
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = true; }
+function touchStarted() { enableMouse = true; return false;}
 
 function touchEnded() { enableMouse = false; }
 
@@ -534,10 +530,7 @@ function mouseClicked() {
 
 function mouseWheel( event ) {
 
-  
-
   const scrollStep = 0.05;
-
 
     if ( event.delta > 0 && scaleRatio < 2 ) scaleRatio += scrollStep;
     if ( event.delta < 0 && scaleRatio > 0.25 ) scaleRatio -= scrollStep;
@@ -554,7 +547,7 @@ function messageReceived(topics, message) {
   const topic  = topics[2];     // get the first sub branch of memorio.     
   
   if ( topic == 'chat' ) { console.log( message ); return; }
-  if ( topic == 'limit' ) { updateStep( parseInt( message ) ); return; }
+  if ( topic == 'limit' ) { messageFreq = parseInt( message ); updateStep( messageFreq ); return; }
 
   let agent = JSON.parse( message );    
   
@@ -572,7 +565,7 @@ function messageReceived(topics, message) {
     case ( 'update' ):
       // const subtopic = topics[3]; 
       let a = world.find( a => a.id == agent.id );
-      if ( a ) {                // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
+      if ( a ) {    // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
         a.char = agent.char;
         a.color = agent.color;
         a.x = agent.x;
