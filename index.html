@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="360" >
+    <title>memor.io</title>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols&display=swap');
+    </style>
+    
+    <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+    	body {
+    		margin:  0;
+        font-family: 'Courier';
+    	}
+      #p5 {
+      width:  100%;
+      touch-action: none;
+      }
+    </style>
+	</head>
+
+	<body>
+
+    <div id='p5'></div>
+
+		<script>
+
+// import Stats from 'https://unpkg.com/three@0.126.0/examples/jsm/libs/stats.module.js';
+// const stats = new Stats();
+
+// let canvas;
+
+const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
+
+const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
+
+const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
+
+const randomUnicodeChar = () => { 
+  // let c, n, i;
+  // let count = 0;
+  // do { 
+  //   n = Math.floor( Math.random() * 2 ).toString() + randomB16Num( 4 );
+  //   i = parseInt( n, 16 );
+  //   // i = Math.floor(Math.random() * 20000);
+  //   c = String.fromCodePoint( i );
+  //   count++;
+  // } while ( !hasGlyph(c) );
+
+  // console.log( c.codePointAt(0).toString(16), c );
+  // if ( count > 1 ) console.log( 'attempts: %i', count );
+
+  
+  const availableIndex = [
+    // ['0', '1', '2', '3', '4', 'a', 'f'],
+    ['0', '1', '2', '3', '4', 'a', 'f'],
+    ['0', '1', '2', '3', '4', '6', '8', 'b', 'c', 'd', 'e', 'f']
+    // [ '2']
+  ]
+  const d30fIndex = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+  let c, n;
+  let d1, d2, d3, d45;
+  do {
+    d1 = Math.floor( Math.random() * 2 ); // 0 or 1, but higher chance on 0;
+    //  d1 = 0;
+    d2 = availableIndex[ d1 ][ Math.floor( Math.random() * availableIndex[ d1 ].length ) ];
+    //  d345 = randomB16Num( 3 );
+    if ( d1 == 0 ) {
+    d3 = d30fIndex[ Math.floor( Math.random() * d30fIndex.length ) ];
+    } else {
+      d3 = 0;
+    }
+     d45 = randomB16Num( 2 );
+
+    n = parseInt( (d1 + d2 + d3 + d45), 16 );
+    c = String.fromCodePoint( n );
+  } while (!hasGlyph(c));
+
+  // console.log( hasGlyph( c ));
+  console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+
+  return c;
+  }
+
+// The following is taken from: https://stackoverflow.com/questions/1911000/detecting-individual-unicode-character-support-with-javascript
+
+/**
+ * The first argument is the character you want to test, and the second argument is the font you want to test it in.
+ * If the second argument is left out, it defaults to the font of the <body> element.
+ * The third argument isn't used under normal circumstances, it's just used internally to avoid infinite recursion.
+ * */
+function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, recursion = false){
+    //Create the canvases
+    // document.createElement("canvas");
+    let testCanvas = document.createElement("canvas");
+    let refCanvas = document.createElement("canvas");
+    testCanvas.width = refCanvas.width = testCanvas.height = refCanvas.height = 150;
+
+    //Render the characters
+    let testContext = testCanvas.getContext("2d");
+    let refContext = refCanvas.getContext("2d");
+    testContext.font = refContext.font = "100px " + font;
+    testContext.fillStyle = refContext.fillStyle = "black";
+    testContext.fillText(character, 0, 100);
+    refContext.fillText('\uffff', 0, 100);
+    
+    //Firefox renders unsupported characters by placing their character code inside the rectangle making each unsupported character look different.
+    //As a workaround, in Firefox, we hide the inside of the character by placing a black rectangle on top of it.
+    //The rectangle we use to hide the inside has an offset of 10px so it can still see part of the character, reducing the risk of false positives.
+    //We check for Firefox and browers that behave similarly by checking if U+FFFE is supported, since U+FFFE is, just like U+FFFF, guaranteed not to be supported.
+    if(!recursion && hasGlyph('\ufffe', font, true)){
+        testContext.fillStyle = refContext.fillStyle = "black";
+        testContext.fillRect(10, 10, 80, 80);
+        refContext.fillRect(10, 10, 80, 80);
+    }
+
+    //Check if the canvases are identical
+    return testCanvas.toDataURL() != refCanvas.toDataURL();
+}
+
+const randomPastel = () => {
+
+  const bounds = [0.5, 0.9];
+
+  const offset = 255 * bounds[0];
+  const limit  = 255 * bounds[1];
+  const range  = limit - offset;
+
+  const r = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const g = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+  const b = Math.floor( ( Math.random() * range ) + offset ).toString(16);
+
+  // const threshold = 0.5;
+  // const total = threshold * 255 * 3;
+
+  // const values = [];
+  // values.push( Math.floor( Math.random() * threshold ) );
+  // values.push( Math.floor( Math.random() * ( threshold - values[0] ) );
+  // values.push( threshold - values[0] - values[1] );
+
+  // const r = values.splice( Math.floor( Math.random() * 3 ), 1 ).toString(16);
+  // const g = values.splice( Math.floor( Math.random() * 2 ), 1 ).toString(16);
+  // const b = values.splice( Math.floor( Math.random() * 1 ), 1 ).toString(16);
+
+  const color = r + g + b;
+  console.log( color )
+
+  return color;
+}
+
+const decoder = new TextDecoder("utf-8");
+
+const id = randomB16Num( 4 );  // generate random base-16 4-digit code as id i.e. 1-f
+const char = randomUnicodeChar();
+const color = randomB16Num( 6 );
+
+const thisAgent = {
+  	id: id,
+  	char: char,
+  	color: color,
+  	x: 0,
+  	y: 0
+  }
+
+
+
+
+// const memory = [ thisAgent ];   // memory includes all agents that are attached.
+const world  = [ thisAgent ];   // world includes all agents that are connected.
+
+const agentSize = 40;
+const agentSizeHalf = agentSize / 2;
+
+const clientId = "memorio-" + id;
+
+const bg = "#000";
+
+let textX = 100;
+let textY = 100;
+let font;
+
+const MAP_SIZE = 2000;
+const MAP_WIDTH = MAP_SIZE;
+const MAP_HEIGHT = MAP_SIZE;
+const MAP_CENTER = {
+  X: MAP_WIDTH / 2,
+  Y: MAP_HEIGHT / 2
+}
+
+let v1, v2, thisVel, newVel;
+let speed = 2;
+
+// MQTT --------------------
+const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
+const client = mqtt.connect(server, {
+  clientId: clientId,
+  will: {
+    topic: '/memorio/disconnect',
+    payload: JSON.stringify( thisAgent ),
+    QoS: 1,
+    retain: false
+  }
+});
+
+// Functions ++++++++++++++++++++++++++++++
+
+// function preload() {
+
+//   font = loadFont('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols:wght@100&display=swap');
+//   console.log(font);
+
+// }
+
+function setup() {
+
+  // const container = document.createElement( 'div' );
+  // container.setAttribute("id", "container");
+
+  // document.body.appendChild( container );
+
+  // container.appendChild( stats.dom );
+  // container.appendChild( canvas );
+  
+  const canvas = createCanvas( windowWidth, windowHeight, P2D );
+  canvas.parent('#p5');
+
+  background( bg );
+  
+  client.on('connect', () => client.subscribe('/memorio/*') );
+  client.on('message', (topic, message) => messageReceived(topic, message) );
+  client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
+
+  // scale( 2000 / Math.min( width, height ) );
+
+
+
+  v1 = createVector();
+  v2 = createVector();
+  thisVel = createVector();
+  newVel = createVector();
+
+  thisAgent.x = MAP_WIDTH / 2;
+  thisAgent.y = MAP_HEIGHT / 2;
+  
+  // const noto = loadFont('../assets/noto.ttf');
+  // textFont( noto );
+  textFont( getComputedStyle(document.body).fontFamily );
+
+}
+
+function draw() { 
+
+  background( 255 );
+  
+
+
+  translate( width / 2, height / 2 );
+  translate( -thisAgent.x, -thisAgent.y );
+
+  drawMap();
+  // drawEdges();
+  drawTitle();
+  drawFrameRate();
+
+  
+
+  // if ( mouseIsPressed )
+  traverse( ); 
+  
+  textSize( agentSize );
+  for ( a of world ) drawAgent( a );
+
+
+
+}
+
+// function mou
+
+function drawMap() {
+
+  fill( 255 );
+  rect( 0, 0, MAP_WIDTH, MAP_HEIGHT );
+
+  const mapStep = MAP_SIZE / 20;
+  stroke( 150 );
+  strokeWeight( 3 );
+
+  for ( let y = 0; y <= MAP_HEIGHT ; y += mapStep ) {
+    for ( let x = 0; x <= MAP_WIDTH ; x += mapStep ) {
+
+      point( x, y );
+
+    }
+  }
+
+  
+
+}
+
+function drawEdges() {
+  noStroke();
+  fill( 235, 20 );
+  rect( 0, 0, width / 3, height );
+  rect( 0, 0, width, height / 3 );
+  rect( width - ( width / 3 ), 0, width / 3, height );
+  rect( 0, height - ( height / 3 ), width, height / 3 );
+}
+
+function drawTitle() {
+
+  const leftOffset = 150;
+  let topOffset = 250;
+  const lineHeight = 50;
+
+  noStroke();
+  textSize( 24 );
+  
+  fill( 50 );
+  textStyle( BOLD );
+  text( 'Memor.io', MAP_CENTER.X - leftOffset, MAP_CENTER.Y - topOffset );
+  topOffset -= lineHeight;
+
+  fill( 100 );
+  textStyle( NORMAL );
+  text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+  topOffset -= lineHeight;
+  text( 'and share your memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+
+}
+
+let fr = "";
+
+function drawFrameRate() {
+
+  if( frameCount % 20 == 0 ) fr = frameRate().toFixed(0).toString() + ' fps';
+
+  noStroke();
+  textSize( 18 );
+  fill( 50 );
+
+  text( fr, thisAgent.x - ( width / 2 ), thisAgent.y - 100 - ( height / 2 ));
+
+}
+
+function drawAgent( agent ) {
+
+  fill( "#" + agent.color );
+  text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
+
+}
+
+let timer = 0;
+
+function move() {
+
+  v1.set( thisAgent.x, thisAgent.y );
+  v2.set( mouseX, mouseY );
+
+  v1.add( v2.sub( v1 ).setMag( speed ) );
+
+  thisAgent.x = v1.x;
+  thisAgent.y = v1.y;
+
+  timer++;
+
+   // limit
+
+}
+
+let enableMouse = false;
+
+function traverse() {
+
+  if ( !enableMouse ) { mouseX = width/2; mouseY = height/2 } // lock movement before first click or if no touch.
+
+  newVel.set( ( mouseX - width/2 ) / width, ( mouseY - height/2 ) / height );
+  newVel.mult( 10 );
+  thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
+  thisAgent.x += thisVel.x;
+  thisAgent.y += thisVel.y;
+
+  // checking for bounds
+  if ( thisAgent.x <= 0 )           thisAgent.x = 0;
+  if ( thisAgent.x >= MAP_WIDTH )   thisAgent.x = MAP_WIDTH;
+  if ( thisAgent.y <= 0 )           thisAgent.y = 0;
+  if ( thisAgent.y >= MAP_HEIGHT )  thisAgent.y = MAP_HEIGHT;
+
+  if ( timer % 5 == 0 )  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+
+
+}
+
+// const updateThisAgent = () => world[0] = thisAgent;
+
+function keyPressed() {
+
+  // thisAgent.char += 1;
+
+  switch ( keyCode ) {
+
+    case ( 37 ):
+    case ( 65 ):
+      thisAgent.x -= agentSize;
+      break;
+
+    case ( 38 ):
+    case ( 87 ):
+      thisAgent.y -= agentSize;
+      break;
+    
+    case ( 39 ):
+    case ( 68 ):
+      thisAgent.x += agentSize;
+      break;
+    
+    case ( 40 ):
+    case ( 83 ):
+      thisAgent.y += agentSize;
+      break;
+
+    case( 32 ):
+      thisAgent.char = randomUnicodeChar();
+      thisAgent.color = randomPastel( );
+
+  }
+
+  // updateThisAgent();
+
+  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+
+}
+
+function mousePressed() { if ( !enableMouse ) enableMouse = true; }
+
+function mouseReleased() {}
+
+function touchStarted() {
+
+  enableMouse = true;
+
+}
+
+function touchEnded() {
+
+  enableMouse = false;
+
+}
+
+function mouseClicked() {
+
+  const mousePos = createVector( mouseX, mouseY );
+  const centrePos = createVector( width/2, height/2 );
+
+  if ( mousePos.dist( centrePos ) < agentSizeHalf ) {
+    thisAgent.char = randomUnicodeChar();
+    thisAgent.color = randomPastel( );
+  }
+
+  // console.log( 'x: %i, y: %i', mouseX, mouseY );
+
+  // let mouse = [ mouseX, mouseY ];
+
+  // if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+
+  // if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+
+  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
+
+  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+
+
+}
+
+function messageReceived(topic, message) {
+
+  topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
+  message = decoder.decode(message);  // decode array buffer.
+
+  if ( topic == 'chat' ) { console.log( message ); return; }
+
+  let agent = JSON.parse( message );    
+  
+  if ( agent.id == thisAgent.id ) return;  // if the received agent matches this agent, don't do anything.
+
+
+  switch (topic) {
+
+    case ( 'connect' ):
+      world.push( agent );
+      client.publish( '/memorio/world', JSON.stringify( thisAgent ) );
+      console.log( 'new connection! world = ', world );
+      break;
+
+    case ( 'agent' ):
+      let a = world.find( a => a.id == agent.id );
+      if ( a ) {                // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
+        a.char = agent.char;
+        a.color = agent.color;
+        a.x = agent.x;
+        a.y = agent.y;
+      }
+      // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
+      break;
+
+    case ( 'world' ):
+      if ( !world.find( a => a.id == agent.id ) ) world.push( agent );
+      console.log( 'received agent. new world = ', world );
+      break;
+
+    case ( 'disconnect' ):
+      let index = world.findIndex( a => a.id == agent.id );
+      if ( index > -1 ) world.splice( index, 1 );
+      console.log( 'someone disconnected! new world = ', world);
+      break;
+
+  }
+
+}
+
+	</script>
+</body>
