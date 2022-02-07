@@ -512,9 +512,13 @@ function mousePressed() { }
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = true; return false; }
+function touchStarted() { enableMouse = !enableMouse; return false; }
 
 function touchEnded() { enableMouse = false; }
+
+document.addEventListener('gesturestart', function(e) {
+  e.preventDefault();
+});
 
 function mouseClicked() {
 
