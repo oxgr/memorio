@@ -239,12 +239,15 @@ const MAP_CENTER = {
 //   }
 // }
 
+let scaleRatio = 1;
+
 let v1, v2, thisVel, newVel;
 let speed = 2;
 
 let font;
 
 let showFrameRate = false;
+let titleDrawn = false;
 
 // MQTT --------------------
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
@@ -297,6 +300,8 @@ function setup() {
   thisAgent.x = MAP_WIDTH / 2;
   thisAgent.y = MAP_HEIGHT / 2;
 
+
+
   // const noto = loadFont('../assets/noto.ttf');
   // textFont( noto );
   textFont( getComputedStyle(document.body).fontFamily );
@@ -306,20 +311,21 @@ function setup() {
 function draw() { 
 
   background( OUTER_BACKGROUND );
-  
-  translate( width / 2, height / 2 );
-  translate( -thisAgent.x, -thisAgent.y );
 
+  translate( width / 2, height / 2 );
+  scale( scaleRatio );
+  translate( -thisAgent.x, -thisAgent.y );
+  
   drawMap();
-  // drawEdges();
-  drawTitle();
+  if ( !titleDrawn ) drawTitle();
   if ( showFrameRate ) drawFrameRate();
 
-  // if ( mouseIsPressed )
   traverse( ); 
-  
+ 
   textSize( AGENT_SIZE );
   for ( a of world ) drawAgent( a );
+
+
 
 
 
@@ -355,25 +361,30 @@ function drawEdges() {
   rect( 0, height - ( height / 3 ), width, height / 3 );
 }
 
+let alpha = 255;
+
 function drawTitle() {
 
-  const leftOffset = 150;
-  let topOffset = 250;
+  const leftOffset = 120;
+  let topOffset = 100;
   const lineHeight = 50;
 
   noStroke();
-  textSize( 24 );
+  textSize( 48 );
   
-  fill( 50 );
+  fill( 50 , alpha );
   textStyle( BOLD );
   text( 'Memor.io', MAP_CENTER.X - leftOffset, MAP_CENTER.Y - topOffset );
   topOffset -= lineHeight;
 
-  fill( 100 );
-  textStyle( NORMAL );
-  text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
-  topOffset -= lineHeight;
-  text( 'and share your memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+  // fill( 100 );
+  // textStyle( NORMAL );
+  // text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+  // topOffset -= lineHeight;
+  // text( 'and share memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
+
+  alpha -= 0.5;
+  if ( alpha <= 0 ) titleDrawn = true;
 
 }
 
@@ -393,6 +404,7 @@ function drawFrameRate() {
 
 function drawAgent( agent ) {
 
+  noStroke();
   fill( "#" + agent.color );
   text( agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE ); // drawn with coordinates in the center of character
 
@@ -500,44 +512,37 @@ function keyPressed() {
 
 }
 
-function mousePressed() { if ( !enableMouse ) enableMouse = true; }
+function mousePressed() { enableMouse = !enableMouse; }
 
 function mouseReleased() {}
 
-function touchStarted() {
+function touchStarted() { enableMouse = true; }
 
-  enableMouse = true;
-
-}
-
-function touchEnded() {
-
-  enableMouse = false;
-
-}
+function touchEnded() { enableMouse = false; }
 
 function mouseClicked() {
 
   const mousePos = createVector( mouseX, mouseY );
   const centrePos = createVector( width/2, height/2 );
 
-  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) {
+  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) {      // click char to randomise char and color;
     thisAgent.char = randomUnicodeChar();
     thisAgent.color = randomPastel( );
   }
 
-  // console.log( 'x: %i, y: %i', mouseX, mouseY );
+}
 
-  // let mouse = [ mouseX, mouseY ];
+function mouseWheel( event ) {
 
-  // if ( mouse[0] < width / 3 ) thisAgent.x -= AGENT_SIZE;
+  
 
-  // if ( mouse[1] < height / 3 ) thisAgent.y -= AGENT_SIZE;
+  const scrollStep = 0.05;
 
-  // if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += AGENT_SIZE;
 
-  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += AGENT_SIZE;
+    if ( event.delta > 0 && scaleRatio < 2 ) scaleRatio += scrollStep;
+    if ( event.delta < 0 && scaleRatio > 0.25 ) scaleRatio -= scrollStep;
 
+  console.log( scaleRatio )
 
 }
 
