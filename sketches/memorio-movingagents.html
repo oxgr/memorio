@@ -512,9 +512,23 @@ function mousePressed() { }
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = !enableMouse; randomiseCharCol(); return false; }
+let touchStartFrame;
+let touchClickThreshold = 30;
 
-function touchEnded() { enableMouse = false;  }
+function touchStarted() {
+  enableMouse = !enableMouse;
+  // randomiseCharCol();
+  touchStartFrame = frameCount;
+  return false;
+}
+
+function touchEnded() {
+  if ( frameCount - touchStartFrame < touchClickThreshold) {
+    mouseClicked();
+    return;
+  }
+  enableMouse = false; 
+}
 
 document.addEventListener('gesturestart', function(e) {
   e.preventDefault();
