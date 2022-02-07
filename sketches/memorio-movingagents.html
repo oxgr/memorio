@@ -508,15 +508,17 @@ function keyPressed() {
 
 }
 
-function mousePressed() { enableMouse = !enableMouse; return false;}
+function mousePressed() { }
 
 function mouseReleased() {}
 
-function touchStarted() { enableMouse = true; return false;}
+function touchStarted() { enableMouse = true; }
 
 function touchEnded() { enableMouse = false; }
 
 function mouseClicked() {
+
+  enableMouse = !enableMouse;
 
   const mousePos = createVector( mouseX, mouseY );
   const centrePos = createVector( width/2, height/2 );
