@@ -33,6 +33,8 @@
 // const stats = new Stats();
 
 // let canvas;
+let touched = false;
+let ShowText = false;
 
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
 
@@ -194,7 +196,9 @@ function draw() {
   
   textSize( agentSize );
   for ( a of world ) drawAgent( a );
-
+  if(ShowText){
+    text('Merge', thisAgent.x+50, thisAgent.y);
+  }
 
 
 }
@@ -271,6 +275,10 @@ function drawAgent( agent ) {
 
   fill( "#" + agent.color );
   text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
+    if(touched){
+    fill(204, 101, 192, 127);
+    ellipse(agent.x, agent.y, 80, 80);
+  }
 
 }
 
@@ -355,9 +363,22 @@ function keyPressed() {
 
 }
 
-function mousePressed() { if ( !enableMouse ) enableMouse = true; }
+function mousePressed() 
+{ 
+  if ( !enableMouse&&touched==true) enableMouse = true; 
 
-function mouseReleased() {}
+}
+
+function mouseReleased() {
+    if (touched&&enableMouse==true){
+    touchEnded()
+    ShowText=false;
+  }
+  else{
+    touchStarted();
+    ShowText=true;
+  }
+}
 
 function touchStarted() {
 
@@ -369,6 +390,10 @@ function touchEnded() {
 
   enableMouse = false;
 
+}
+function PlayerContact(){
+  touched=true;
+    //console.log("Player Touched");
 }
 
 function mouseClicked() {
@@ -425,6 +450,16 @@ function messageReceived(topic, message) {
         a.color = agent.color;
         a.x = agent.x;
         a.y = agent.y;
+        //console.log(dist(thisAgent.x,thisAgent.y,a.x,a.y));
+        var distance=dist(thisAgent.x,thisAgent.y,a.x,a.y);
+        if(distance<200&&enableMouse==true){
+          ShowText=true;
+          PlayerContact();
+        }
+        else{
+          touched=false;
+          ShowText=false;
+        }
       }
       // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
       break;
