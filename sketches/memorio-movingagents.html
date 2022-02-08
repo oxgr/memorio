@@ -265,7 +265,7 @@ const client = mqtt.connect(server, {
     topic: '/memorio/disconnect',
     payload: JSON.stringify( thisAgent ),
     QoS: 1,
-    retain: false
+    retain: true
   }
 });
 
@@ -365,7 +365,7 @@ function checkNeighbourhood( agent ) {
    
     if ( !attachable.includes( agent ) ) {
       attachable.push( agent );
-      console.log( 'attachable: pushed!' );
+      // console.log( 'attachable: pushed!' );
     }
 
     stroke( '#' + agent.color );
@@ -377,7 +377,7 @@ function checkNeighbourhood( agent ) {
     const index = attachable.indexOf( agent );
     if ( index > -1 ) {
       attachable.splice( index, 1 );
-      console.log( 'attachable: spliced: ', index );
+      // console.log( 'attachable: spliced: ', index );
     }
   }
 
@@ -824,18 +824,27 @@ function messageReceived(topics, message) {
       break;
 
     case ( 'disconnect' ):
+
+      if ( thisAgent.parent.id == agent.id ) {
+        console.log( ' disconnected is parent, agent: ', agent );
+        let grandparent = world.find( a => a.id == agent.parent.id );
+        if ( grandparent) {  // if grandparent exists, new parent is grandparent
+          thisAgent.parent = grandparent;
+          // console.log( 'found grandparent! ' );
+        } else {
+          thisAgent.parent.id = {};
+          isAttached = false;
+          world.push( thisAgent );
+          client.publish( '/memorio/update', JSON.stringify( thisAgent ) );
+        }
+      }
+
       let index = world.findIndex( a => a.id == agent.id );
       if ( index > -1 ) world.splice( index, 1 );
       index = attachable.findIndex( a => a.id == agent.id );
       if ( index > -1 ) attachable.splice( index, 1 );
       console.log( 'someone disconnected! new world = ', world);
 
-      if ( thisAgent.parent.id == agent.id ) {
-        thisAgent.parent.id = {};
-        isAttached = false;
-        world.push( thisAgent );
-        client.publish( '/memorio/update', JSON.stringify( thisAgent ) );
-      }
       break;
     
   }
