@@ -585,6 +585,7 @@ function traverse() {
   if (
     frameCount % messageStep == 0
     && ( thisVel.x > velThreshold || thisVel.y > velThreshold )
+    && !isAttached
     )
     client.publish( "/memorio/update", JSON.stringify( thisAgent ) );
 
