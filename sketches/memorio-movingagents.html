@@ -399,6 +399,7 @@ function drawFrameRate() {
 }
 
 function drawAgent( agent ) {
+<<<<<<< Updated upstream
 
   noStroke();
   fill( "#" + agent.color );
@@ -465,15 +466,25 @@ function traverse() {
     )
     client.publish( "/memorio/update", JSON.stringify( thisAgent ) );
 
+=======
+  strokeWeight(0);
+  stroke(51);
+  fill( "#" + agent.color );
+  rect( agent.x, agent.y, agentSize )
+  
+>>>>>>> Stashed changes
 
 }
 
 function keyPressed() {
+<<<<<<< Updated upstream
 
   console.log( keyCode );
 
+=======
+ console.log(keyIsPressed);
+>>>>>>> Stashed changes
   switch ( keyCode ) {
-
     case ( 37 ):
     case ( 65 ):
       thisAgent.x -= AGENT_SIZE;
@@ -481,22 +492,37 @@ function keyPressed() {
 
     case ( 38 ):
     case ( 87 ):
+<<<<<<< Updated upstream
       thisAgent.y -= AGENT_SIZE;
+=======
+      thisAgent.y -= agentSize;
+      
+>>>>>>> Stashed changes
       break;
     
     case ( 39 ):
     case ( 68 ):
+<<<<<<< Updated upstream
       thisAgent.x += AGENT_SIZE;
+=======
+      thisAgent.x += agentSize;
+      
+>>>>>>> Stashed changes
       break;
     
     case ( 40 ):
     case ( 83 ):
+<<<<<<< Updated upstream
       thisAgent.y += AGENT_SIZE;
       break;
 
     case ( 32 ):
       thisAgent.char = randomUnicodeChar();
       thisAgent.color = randomPastel( );
+=======
+      thisAgent.y += agentSize;
+
+>>>>>>> Stashed changes
       break;
 
     case ( 70 ):
