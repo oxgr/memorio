@@ -342,10 +342,7 @@ function draw() {
   
   thisAgentPos.set( thisAgent.x, thisAgent.y );
   textSize( AGENT_SIZE );
-<<<<<<< Updated upstream
-  for ( a of world ) drawAgent( a );
 
-=======
   for ( agent of world ) {
     if ( agent != thisAgent && !isAttached ) checkNeighbourhood( agent );     // right now, checkBounds is run for every obj in world except if thisAgent
     drawAgent( agent );
@@ -418,7 +415,6 @@ function checkNeighbourhood( agent ) {
   //   return;
   //   client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
   // }
->>>>>>> Stashed changes
 }
 
 // function mou
@@ -497,8 +493,6 @@ function drawAgent( agent ) {
   noStroke();
   fill( "#" + agent.color );
   text( agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE ); // drawn with coordinates in the center of character
-<<<<<<< Updated upstream
-=======
 
   if ( agent.children.length > 0 ) {
 
@@ -517,7 +511,6 @@ function drawAgent( agent ) {
   // } else{
   //   agent.showText = false;
   // }
->>>>>>> Stashed changes
 
 }
 
@@ -612,12 +605,7 @@ function updateChildPos( parent ) {
 
 function keyPressed() {
 
-<<<<<<< Updated upstream
-  console.log( keyCode );
-
-=======
   // thisAgent.char += 1;
->>>>>>> Stashed changes
   switch ( keyCode ) {
 
     case ( 37 ):
@@ -670,13 +658,8 @@ function touchStarted() {
 
 function touchEnded() {
   if ( frameCount - touchStartFrame < touchClickThreshold) {
-<<<<<<< Updated upstream
-    randomiseCharCol();
-    // enableMouse = true;
-=======
     mouseClicked();
     enableMouse = !enableMouse;
->>>>>>> Stashed changes
     return;
   }
   enableMouse = false; 
@@ -688,9 +671,6 @@ document.addEventListener('gesturestart', function(e) {
 
 function mouseClicked() {
 
-<<<<<<< Updated upstream
-  enableMouse = !enableMouse;
-=======
   // if(thisAgent.showText){
   //   console.log("Merge successful");
   //   thisAgent.control=false;
@@ -701,7 +681,6 @@ function mouseClicked() {
  // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
   
   mousePos.set( mouseX, mouseY );
->>>>>>> Stashed changes
 
   if ( mousePos.dist( centrePos ) < AGENT_SIZE ) { randomiseCharCol(); return; }
 
@@ -722,13 +701,9 @@ function mouseClicked() {
 
   enableMouse = !enableMouse;
 
-<<<<<<< Updated upstream
-  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) {      // click char to randomise char and color;
-=======
 }
 
 function randomiseCharCol() {
->>>>>>> Stashed changes
     thisAgent.char = randomUnicodeChar();
     thisAgent.color = randomPastel( );
 }
