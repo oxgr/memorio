@@ -35,8 +35,7 @@
 
     /********** Helper Functions **********/
     // let canvas;
-    let touched = false;
-    let ShowText = false;
+
     let blam = 0;
     //Diameter of one particle
     let particleSize = 5;
@@ -308,6 +307,7 @@
     let isAttached = false;
     let enableEmojis = false;
     let enableMouse = false;
+    let ShowText = false;
 
     let messageFreq = 10;   // messages per second given 60fps
     let messageStep = 0;
@@ -403,7 +403,7 @@
           checkNeighbourhood(agent);
         drawAgent(agent);
       }
-      textSize(agentSize);
+      textSize(AGENT_SIZE);
       for (a of world) drawAgent(a);
       if (ShowText) {
         text('Merge', thisAgent.x + 50, thisAgent.y);
@@ -510,37 +510,8 @@
         particle.display();
       });
 
-      if (touched && agent.id == blam) {
-        fill(204, 101, 192, 127);
-        ellipse(agent.x, agent.y, 80, 80);
-        stroke(50);
-        fill(100);
+      if (ShowText && agent.id == blam) {
 
-        if (setted == false) {
-          cx = thisAgent.x;
-          cy = thisAgent.y;
-          setted = true;
-        }
-
-        ellipse(cx, cy, 5, 5);
-        numer = dist(agent.x, agent.y, cx, cy);
-
-        if (agent.x <= cx) {
-          cx -= 5;
-          if (agent.y <= cy) {
-            cy -= 5;
-          }
-        }
-        else if (agent.x >= cx) {
-          cx += 5;
-          if (agent.y >= cy) {
-            cy += 5;
-          }
-        }
-        if (numer < 5) {
-          setted = false;
-        }
-        noStroke();
 
       }
 
@@ -617,6 +588,38 @@
         strokeWeight(4);
         noFill();
         circle(agent.x, agent.y, AGENT_SIZE * 2);
+        fill(204, 101, 192, 127);
+        ellipse(agent.x, agent.y, 80, 80);
+        stroke(50);
+        fill(100);
+
+        if (setted == false) {
+          cx = thisAgent.x;
+          cy = thisAgent.y;
+          setted = true;
+        }
+
+        ellipse(cx, cy, 5, 5);
+        numer = dist(agent.x, agent.y, cx, cy);
+
+        if (agent.x <= cx) {
+          cx -= 5;
+          if (agent.y <= cy) {
+            cy -= 5;
+          }
+        }
+        else if (agent.x >= cx) {
+          cx += 5;
+          if (agent.y >= cy) {
+            cy += 5;
+          }
+        }
+        if (numer < 5) {
+          setted = false;
+        }
+        noStroke();
+
+        ShowText = true;// show merge text
 
       } else {
 
@@ -669,21 +672,6 @@
     //  Define mouse functions so desktop doesn't revert to touch functions as default.
     function mousePressed() { }
     function mouseReleased() { }
-    function mousePressed() {
-      if (!enableMouse && touched == true) enableMouse = true;
-
-    }
-
-    function mouseReleased() {
-      if (touched && enableMouse == true) {
-        touchEnded()
-        ShowText = false;
-      }
-      else {
-        touchStarted();
-        ShowText = true;
-      }
-    }
 
     let touchStartFrame;
     const TOUCH_CLICK_THRESHOLD = 30;
@@ -733,6 +721,12 @@
         thatAgentPos.set(a.x, a.y).sub(thisAgentPos).add(centrePos);
 
         if (attachable.includes(a) && mousePos.dist(thatAgentPos) < AGENT_SIZE) {
+          
+          
+            ShowText = false;
+           
+            
+          
 
           console.log('merged!');
           isAttached = true;
@@ -899,22 +893,22 @@
               // console.log( 'found this as child! x: %i, y: %i', thisAsChild.x, thisAsChild.y);
             }
             //console.log(dist(thisAgent.x,thisAgent.y,a.x,a.y));
-            var distance = dist(thisAgent.x, thisAgent.y, a.x, a.y);
+            // var distance = dist(thisAgent.x, thisAgent.y, a.x, a.y);
 
-            if (distance < 200 && enableMouse == true) {
-              ShowText = true;
-              blam = agent.id;
-              // console.log(blam);
-              PlayerContact();
-            }
-            else if (agent.id == blam) {
-              // console.log(blam==agent.id);
-              //console.log(blam);
-              //console.log(agent.id);
-              touched = false;
-              ShowText = false;
-              setted = false;
-            }
+            // if (distance < 200 && enableMouse == true) {
+            //   ShowText = true;
+            //   blam = agent.id;
+            //   // console.log(blam);
+            //   PlayerContact();
+            // }
+            // else if (agent.id == blam) {
+            //   // console.log(blam==agent.id);
+            //   //console.log(blam);
+            //   //console.log(agent.id);
+            //   touched = false;
+            //   ShowText = false;
+            //   setted = false;
+            // }
           }
           // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
           break;
