@@ -32,6 +32,17 @@
     <script>
 
 /********** Helper Functions **********/
+// let canvas;
+let touched = false;
+let ShowText = false;
+let blam=0;
+//Diameter of one particle
+let particleSize = 5;
+//Total particles
+let particleSum = 100;
+//Holds particles
+let particles = [];
+
 
 /**
  * Returns a randomised position within the canvas size in an array of [x, y].
@@ -319,6 +330,11 @@ function setup() {
   
   const canvas = createCanvas( windowWidth, windowHeight, P2D );
   canvas.parent('#p5');
+
+  background( bg );
+  for (let i = 0; i < particleSum; i++) {
+    particles.push(new Particle());
+  }
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
@@ -352,6 +368,10 @@ function setup() {
   thisAgentPos = createVector();
   thatAgentPos = createVector();
   newPosAsChild = createVector();
+  background( 255 );
+  
+   //Move and display particles
+
 
   //  Sets the font to the one set for the <body> of the page. Find this at the <style> section. Makes it easy to import fonts if needed.
   textFont( getComputedStyle(document.body).fontFamily );
@@ -381,7 +401,34 @@ function draw() {
       checkNeighbourhood( agent );   
     drawAgent( agent );
   }
+  textSize( agentSize );
+  for ( a of world ) drawAgent( a );
+  if(ShowText){
+    text('Merge', thisAgent.x+50, thisAgent.y);
+  }
 
+
+}
+
+class Particle {
+  constructor() {
+    this.pos = createVector(Math.floor(Math.random() * MAP_WIDTH), Math.floor(Math.random() * MAP_HEIGHT));
+    this.direction = createVector(Math.random() * 0.7, Math.random() * 0.7);
+  }
+    //Moves the particles and bounces them off the edges
+   move() {
+    this.pos = this.pos.add(this.direction);
+    if (this.pos.x <= 0) this.direction.x *= -1;
+    if (this.pos.x > width) this.direction.x *= -1;
+    if (this.pos.y <= 0) this.direction.y *= -1;
+    if (this.pos.y > height) this.direction.y *= -1;
+  }
+  // More code...
+
+  display() {
+    noStroke();
+    ellipse(this.pos.x, this.pos.y, particleSize)
+  }
 }
 
 function drawMap() {
@@ -440,6 +487,9 @@ function drawFrameRate() {
   text( fr, thisAgent.x + 50, thisAgent.y);
 
 }
+let setted = false;
+cx=0;
+cy=0;
 
 function drawAgent( agent ) {
   
@@ -451,6 +501,42 @@ function drawAgent( agent ) {
   if ( agent.children.length > 0 )
     for ( c of agent.children ) 
         drawAgent( c );
+  text( agent.char, agent.x - agentSizeHalf, agent.y - agentSizeHalf, agentSize ); // drawn with coordinates in the center of character
+    particles.forEach(particle => {
+    particle.move();
+    particle.display();
+  });
+  
+    if(touched && agent.id==blam){
+    fill(204, 101, 192, 127);
+    ellipse(agent.x, agent.y, 80, 80);
+    stroke(50);
+    fill(100);
+    if(setted==false){
+    cx=thisAgent.x;
+    cy=thisAgent.y;
+    setted = true;
+  }
+  ellipse(cx, cy, 5, 5);
+  numer=dist(agent.x,agent.y,cx,cy);
+  if(agent.x<=cx){
+  cx-=5;
+  if(agent.y<=cy){
+  cy-=5;
+  }
+}
+else if(agent.x>=cx){
+  cx+=5;
+    if(agent.y>=cy){
+  cy+=5;
+  }
+}
+if(numer<5){
+  setted=false;
+}
+  noStroke();
+
+  }
 
 }
 
@@ -512,6 +598,8 @@ function checkNeighbourhood( agent ) {
   const attachThreshold = 150;
 
   thatAgentPos.set( agent.x, agent.y );
+  // thisAgent.char += 1;
+  if(enableMouse==true){
 
   if ( thisAgentPos.dist( thatAgentPos ) < attachThreshold ) {
    
@@ -576,6 +664,22 @@ function findThisAsChild( agent ) {
 //  Define mouse functions so desktop doesn't revert to touch functions as default.
 function mousePressed() {}
 function mouseReleased() {}
+function mousePressed() 
+{ 
+  if ( !enableMouse&&touched==true) enableMouse = true; 
+
+}
+
+function mouseReleased() {
+    if (touched&&enableMouse==true){
+    touchEnded()
+    ShowText=false;
+  }
+  else{
+    touchStarted();
+    ShowText=true;
+  }
+}
 
 let touchStartFrame;
 const TOUCH_CLICK_THRESHOLD = 30;
@@ -599,6 +703,10 @@ function touchEnded() {
     enableMouse = false; 
   }
 
+}
+function PlayerContact(){
+  touched=true;
+    //console.log("Player Touched");
 }
 
 /**
@@ -786,6 +894,23 @@ function messageReceived(topics, message) {
           // thisAgent.y = thisAsChild.y;
           // console.log( 'found this as child! x: %i, y: %i', thisAsChild.x, thisAsChild.y);
         }
+        //console.log(dist(thisAgent.x,thisAgent.y,a.x,a.y));
+        var distance=dist(thisAgent.x,thisAgent.y,a.x,a.y);
+        
+        if(distance<200&&enableMouse==true){
+          ShowText=true;
+           blam=agent.id;
+          // console.log(blam);
+          PlayerContact();
+        }
+         else if(agent.id==blam){
+         // console.log(blam==agent.id);
+          //console.log(blam);
+          //console.log(agent.id);
+           touched=false;
+           ShowText=false;
+           setted = false;
+         }
       }
       // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
       break;
