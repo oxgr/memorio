@@ -672,58 +672,6 @@ function keyPressed() {
 
 }
 
-function mousePressed() {  }
-
-function mouseReleased() {}
-
-let touchStartFrame;
-let touchClickThreshold = 30;
-
-function touchStarted() {
-  enableMouse = true;
-  // randomiseCharCol();
-  touchStartFrame = frameCount;
-  return false;
-}
-
-function touchEnded() {
-  if ( frameCount - touchStartFrame < touchClickThreshold) {
-    mouseClicked();
-    enableMouse = !enableMouse;
-    return;
-  }
-  enableMouse = false; 
-}
-
-document.addEventListener('gesturestart', function(e) {
-  e.preventDefault();
-});
-
-function mouseClicked() {
-  
-  mousePos.set( mouseX, mouseY );
-
-  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) { randomiseCharCol(); return; }
-
-  thisAgentPos.set( thisAgent.x, thisAgent.y );
-
-  for ( a of world ) {
-    thatAgentPos.set( a.x, a.y ).sub( thisAgentPos ).add( centrePos );
-    if ( attachable.includes( a ) && mousePos.dist( thatAgentPos ) < AGENT_SIZE ) {
-      console.log( 'merged!' );
-      isAttached = true;
-      thisAgent.parent = a;
-      newPosAsChild.set( thisAgent.x, thisAgent.y );
-      client.publish( "/memorio/attach", JSON.stringify( { parent: a, child: thisAgent } ) );
-
-      return;
-    }
-  }
-
-  enableMouse = !enableMouse;
-
-}
-
 function messageReceived(topics, message) {
 
   topics = topics.split( '/' );
