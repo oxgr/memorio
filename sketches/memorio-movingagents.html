@@ -12,6 +12,7 @@
     
     <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- <script src="https://unpkg.com/get-some-cool-emojis"></script> -->
     <style>
       body {
         margin:  0;
@@ -30,66 +31,102 @@
 
     <script>
 
-// import Stats from 'https://unpkg.com/three@0.126.0/examples/jsm/libs/stats.module.js';
-// const stats = new Stats();
+/********** Helper Functions **********/
 
-// let canvas;
-
+/**
+ * Returns a randomised position within the canvas size in an array of [x, y].
+ */
 const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
 
+/**
+ * Clamps value to within the range.
+ */
+const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
+/**
+ * Sets the coordinates of an agent into a random position.
+ * 
+ * @param { agent }   The agent to randomise the position of.
+ */
 const setRandomPos = ( agent ) => { agent.x = randomPos()[0]; agent.y = randomPos()[1]; }
 
+/**
+ * Returns a random base-16 number as a string.
+ * 
+ * @example
+ * // returns hexcode.
+ * randomB16Num( 6 );
+ * 
+ * @param { number } digits   The amount base-16 digits to return.
+ */
 const randomB16Num = ( digits ) => Math.floor( Math.random() * Math.pow( 16, digits ) ).toString( 16 );  // generate random base-16 string with input number of digits i.e. 0-f
 
-const randomUnicodeChar = () => { 
+/**
+ * Returns a character from a randomised unicode code point.
+ * Runs the hasGlyph() function in a while loop to ensure the random character can be rendered.
+ * 
+ * @param {boolean} enableEmojis  Toggle the range to ouput mostly emojis.
+ */
+const randomUnicodeChar = ( enableEmojis ) => { 
+
+  let c, n, i;
+  let d1, d2, d3, d45;
 
   /********** Even-ish distribution *************/
 
-  let c, n, i;
-  let d1, d2, d345;
-  let count = 0;
-  do { 
-    d1 = Math.floor( Math.random() * 2 ).toString();
+  if ( !enableEmojis ) {
 
-    /** distributed **/
-    d2 = Math.floor( Math.random() * 2 );
-    if ( d1 == 1 || d2 == 1 ) d2 = randomB16Num( 1 );
-    d3 = Math.floor( Math.random() * 5 );
-    if ( d1 == 1 || d2 == 1 || d3 > 1) d3 = randomB16Num( 1 );
-    d45 = randomB16Num( 2 );
-    n = d1 + d2 + d3 + d45;
 
-    /** random **/
-    // n = d1 + randomB16Num( 4 );
+    let count = 0;
 
-    i = parseInt( n, 16 );
-    // i = Math.floor(Math.random() * 20000);
-    c = String.fromCodePoint( i );
-    count++;
-  } while ( !hasGlyph(c) || i < 32 );
+    do { 
+      d1 = Math.floor( Math.random() * 2 ).toString();
 
-  // console.log( c.codePointAt(0).toString(16), c );
-  if ( count > 1 ) console.log( 'attempts: %i', count );
+      /** distributed **/
+      d2 = Math.floor( Math.random() * 2 );
+      if ( d1 == 1 || d2 == 1 ) d2 = randomB16Num( 1 );
+      d3 = Math.floor( Math.random() * 5 );
+      if ( d1 == 1 || d2 == 1 || d3 > 1) d3 = randomB16Num( 1 );
+      d45 = randomB16Num( 2 );
+      n = d1 + d2 + d3 + d45;
 
-  // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+      /** random **/
+      // n = d1 + randomB16Num( 4 );
 
+      i = parseInt( n, 16 );
+      c = String.fromCodePoint( i );
+      count++;
+    } while ( !hasGlyph(c) || i < 32 );
+
+    // print how many attempts it took to find a character that has a glyph.
+    // if ( count > 1 ) console.log( 'attempts: %i', count );
+
+  
   /*************** Emojis-ish ******************/
 
-  // let c, n;
-  // let d1, d2, d3, d45;
-  // do {
-  //   d1 = 1;
-  //   d2 = 'f';
-  //   d3 = randomB16Num( 1 );
-  //   d45 = randomB16Num( 2 );
+  } else {
 
-  //   n = parseInt( (d1 + d2 + d3 + d45), 16 );
-  //   c = String.fromCodePoint( n );
-  // } while (!hasGlyph(c));
+    do {
+      d1 = 1;
+      d2 = 'f';
+      d3 = randomB16Num( 1 );
+      d45 = randomB16Num( 2 );
 
-  // console.log( hasGlyph( c ));
-  // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
+      n = parseInt( (d1 + d2 + d3 + d45), 16 );
+      c = String.fromCodePoint( n );
+    } while (!hasGlyph(c));
 
+    console.log( hasGlyph( c ));
+
+    // console.log( getSomeCoolEmojis ( 1 ))
+
+    // c= getSomeCoolEmojis( 1 );
+    // if ( c.length > 1 ) c = c.charAt( 0 );
+
+
+  }
+
+  // The following code was used to manually exclude ranges that returned a lot of .notdef glyphs. Totally unscientific and mostly irrelevant after implementing the hasGlyph() check. Still, it doesn't hurt to keep for now.
 
   /************* Filtered index ***** *********/
 
@@ -123,15 +160,21 @@ const randomUnicodeChar = () => {
   // console.log( hasGlyph( c ));
   // console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
 
+  console.log( 'd: %s%s%s%s, c: %s', d1, d2, d3, d45, c);
   return c;
+
   }
+
 
 // The following is taken from: https://stackoverflow.com/questions/1911000/detecting-individual-unicode-character-support-with-javascript
 
 /**
- * The first argument is the character you want to test, and the second argument is the font you want to test it in.
- * If the second argument is left out, it defaults to the font of the <body> element.
- * The third argument isn't used under normal circumstances, it's just used internally to avoid infinite recursion.
+ * Checks if a character has a glyph defined for the font chosen. Since the .notdef glyph (usually shown as a blank rectangle) isn't an actual unicode character that can be compared with, this function creates two identical canvas elements, prints the character in one, a known .notdef unicode value in the other, and compares the data of both to see if they're the same.
+ * 
+ * @param {String}  character   The character he character you want to test, and the second argument is the font you want to test it in.
+ * @param {font} font           The font to run the check with. Defaults to the font of the <body> element.
+ * @param {boolean} recursion   Isn't used under normal circumstances, it's just used internally to avoid infinite recursion.
+ * @return {boolean}            Whether or not the input character is rendered as .notdef.
  * */
 function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, recursion = false) {
     //Create the canvases
@@ -164,6 +207,9 @@ function hasGlyph(character, font = getComputedStyle(document.body).fontFamily, 
     return testCanvas.toDataURL() != refCanvas.toDataURL();
 }
 
+/**
+ * Returns a random hexcode colour with each rgb value contained within the hard-coded normalised bounds variable.
+ */
 const randomPastel = () => {
 
   const bounds = [0.5, 0.9];
@@ -176,28 +222,20 @@ const randomPastel = () => {
   const g = Math.floor( ( Math.random() * range ) + offset ).toString(16);
   const b = Math.floor( ( Math.random() * range ) + offset ).toString(16);
 
-  // const threshold = 0.5;
-  // const total = threshold * 255 * 3;
-
-  // const values = [];
-  // values.push( Math.floor( Math.random() * threshold ) );
-  // values.push( Math.floor( Math.random() * ( threshold - values[0] ) );
-  // values.push( threshold - values[0] - values[1] );
-
-  // const r = values.splice( Math.floor( Math.random() * 3 ), 1 ).toString(16);
-  // const g = values.splice( Math.floor( Math.random() * 2 ), 1 ).toString(16);
-  // const b = values.splice( Math.floor( Math.random() * 1 ), 1 ).toString(16);
-
   const color = r + g + b;
 
   return color;
 }
 
+
+/********** Variables **********/
+
+// Used to decode incoming MQTT messages from ArrayBuffer.
 const decoder = new TextDecoder("utf-8");
 
-const id = randomB16Num( 4 );  // generate random base-16 4-digit code as id i.e. 1-f
-const char = randomUnicodeChar();
-const color = randomB16Num( 6 );
+const id = randomB16Num( 4 );
+const char = randomUnicodeChar( false );
+const color = randomPastel( );
 
 const thisAgent = {
     id: id,
@@ -206,22 +244,20 @@ const thisAgent = {
     x: 0,
     y: 0,
     parent: {},
-    children: []
+    children: [],
+    connected: false
   }
 
-// const memory = [ thisAgent ];   // memory includes all agents that are attached.
-const world  = [ thisAgent ];   // world includes all agents that are connected.
-const attachable = [];
+const world  = [ thisAgent ];   //  All agents to be drawn.
+const attachable = [];          //  All agents that fall within the attachThreshold radius.
 
 const AGENT_SIZE = 40;
 const AGENT_SIZE_HALF = AGENT_SIZE / 2;
 
-const clientId = "memorio-" + id;
-
 const OUTER_BACKGROUND = "#ccddee";
 
 const MAP_SIZE = 4000;
-const MAP_SHAPE = 'CIRCLE' // CIRCLE or RECT
+const MAP_SHAPE = 'CIRCLE'    // CIRCLE or RECT
 const MAP_RADIUS = MAP_SIZE/2;
 const MAP_WIDTH = MAP_SIZE;
 const MAP_HEIGHT = MAP_SIZE;
@@ -230,9 +266,11 @@ const MAP_CENTER = {
   Y: MAP_HEIGHT / 2
 }
 
+const CLIENT_ID = "memorio-" + id;
+
 // const MAP = {
-//   SIZE  :2000;
-//   SHAPE :'CIRCLE' // CIRCLE or RECT
+//   SIZE  : 2000;
+//   SHAPE : 'CIRCLE' // CIRCLE or RECT
 //   RADIUS: MAP_SIZE;
 //   WIDTH : MAP_SIZE;
 //   HEIGHT: MAP_SIZE;
@@ -242,70 +280,69 @@ const MAP_CENTER = {
 //   }
 // }
 
+//  Used for zooming in and out.
 let scaleRatio = 1;
 
+//  Global variables to be defined as p5.Vector objects.
 let v1, v2, thisVel, newVel;
-let speed = 2;
-
 let mousePos, centrePos;
-
 let thisAgentPos, thatAgentPos, newPosAsChild;
+let maxMag, posFromMapCentre;
 
-let font;
-
+//  State booleans
 let showFrameRate = false;
 let titleDrawn = false;
 let isAttached = false;
+let enableEmojis = false;
+let enableMouse = false;
 
-// MQTT --------------------
+let messageFreq = 10;   // messages per second given 60fps
+let messageStep = 0;
+
+
+/********** MQTT **********/
+
 const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
 const client = mqtt.connect(server, {
-  clientId: clientId,
+  clientId: CLIENT_ID,
   will: {
-    topic: '/memorio/disconnect',
+    topic: '/memorio/connection',
     payload: JSON.stringify( thisAgent ),
     QoS: 1,
     retain: true
   }
 });
 
-// Functions ++++++++++++++++++++++++++++++
 
-// function preload() {
-
-//   font = loadFont('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols:wght@100&display=swap');
-//   console.log(font);
-
-// }
+/********** Main Functions **********/
 
 function setup() {
-
-  // const container = document.createElement( 'div' );
-  // container.setAttribute("id", "container");
-
-  // document.body.appendChild( container );
-
-  // container.appendChild( stats.dom );
-  // container.appendChild( canvas );
   
   const canvas = createCanvas( windowWidth, windowHeight, P2D );
   canvas.parent('#p5');
-
-  thisAgent.x = MAP_WIDTH / 2;
-  thisAgent.y = MAP_HEIGHT / 2;
   
   client.on('connect', () => client.subscribe('/memorio/*') );
   client.on('message', (topic, message) => messageReceived(topic, message) );
-  client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
+
+  setRandomPos( thisAgent );
+
+  // Overrides random pos and sets pos to center for easy interaction debugging. Comment out for final release.
+  thisAgent.x = MAP_WIDTH / 2;
+  thisAgent.y = MAP_HEIGHT / 2;
+
+  thisAgent.connected = true;
+  client.publish( '/memorio/connection', JSON.stringify( thisAgent ) );
+
   updateStep( messageFreq );
 
-  // scale( 2000 / Math.min( width, height ) );
-
+  //  Create vectors once to avoid overloading RAM with new objects.
+  //  Pretty sure that Javascript's automatic garbage collection doesn't apply to p5 objects.
   v1      = createVector();
   v2      = createVector();
   thisVel = createVector();
   newVel  = createVector();
-  pos     = createVector();
+
+  posFromMapCentre  = createVector();
   maxMag  = createVector( 0, MAP_RADIUS ).mag();
 
   mousePos  = createVector() ;
@@ -315,13 +352,7 @@ function setup() {
   thatAgentPos = createVector();
   newPosAsChild = createVector();
 
-  
-  
-
-
-
-  // const noto = loadFont('../assets/noto.ttf');
-  // textFont( noto );
+  //  Sets the font to the one set for the <body> of the page. Find this at the <style> section. Makes it easy to import fonts if needed.
   textFont( getComputedStyle(document.body).fontFamily );
 
 }
@@ -330,94 +361,27 @@ function draw() {
 
   background( OUTER_BACKGROUND );
 
-  translate( width / 2, height / 2 );
-  scale( scaleRatio );
-  translate( -thisAgent.x, -thisAgent.y );
+  translate( width / 2, height / 2 );       //  Move origin to center of screen.
+  scale( scaleRatio );                      //  Adjust zoom.
+  translate( -thisAgent.x, -thisAgent.y );  //  Center the window around the position of thisAgent.
   
   drawMap();
   if ( !titleDrawn ) drawTitle();
-  if ( showFrameRate ) drawFrameRate();
+  if ( showFrameRate ) drawFrameRate();     // Press F to show/hide framerate for debugging.
 
-  traverse( ); 
+  traverse(); 
   
-  thisAgentPos.set( thisAgent.x, thisAgent.y );
+  thisAgentPos.set( thisAgent.x, thisAgent.y );   //  Update the pos vector once a draw loop instead of every sub-loop.
   textSize( AGENT_SIZE );
+  textStyle( NORMAL );
 
   for ( agent of world ) {
-    if ( agent != thisAgent && !isAttached ) checkNeighbourhood( agent );     // right now, checkBounds is run for every obj in world except if thisAgent
+    if ( agent != thisAgent && !isAttached )  // run for every obj in world except if thisAgent
+      checkNeighbourhood( agent );   
     drawAgent( agent );
   }
 
 }
-
-function checkNeighbourhood( agent ) {
-
-  // maybe use a p5.Vector? it's an object that's p much just an x and y value.
-
-  // 1. Turn xy coordinates into a vector with createVector()
-  // 2. use the dist() function to find the distance between one vector and another.
-
-  const attachThreshold = 150;
-
-  thatAgentPos.set( agent.x, agent.y );
-
-  if ( thisAgentPos.dist( thatAgentPos ) < attachThreshold ) {
-   
-    if ( !attachable.includes( agent ) ) {
-      attachable.push( agent );
-      // console.log( 'attachable: pushed!' );
-    }
-
-    stroke( '#' + agent.color );
-    strokeWeight( 4 );
-    noFill();
-    circle( agent.x, agent.y, AGENT_SIZE * 2);
-
-  } else {
-    const index = attachable.indexOf( agent );
-    if ( index > -1 ) {
-      attachable.splice( index, 1 );
-      // console.log( 'attachable: spliced: ', index );
-    }
-  }
-
-
-
-
-  // if (
-  //   thisAgent.x       < agent.x + 10  &&
-  //   thisAgent.x + 40  > agent.x       ||
-  //   thisAgent.x       > agent.x - 10  &&
-  //   thisAgent.x - 40  < agent.x ) {
-   
-  //   console.log("collision on x");
-
-  //   thisAgent.showText=true;
-
-  //     if( thisAgent.y < agent.y+10 && thisAgent.y+40>agent.y||thisAgent.y>agent.y-10 && thisAgent.y-40<agent.y) {
-  //           console.log("collision on y");
-  //           thisAgent.showText=true;
-  //         }
-  //         else{
-  //     thisAgent.showText=false;
-  //             if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-  //   return;
-  //     client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
-  //   }
-      
-  //     if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-  //   return;
-  //     client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
-  // }
-  // else{
-  //   thisAgent.showText=false;
-  //           if ( agent.showText == thisAgent.showText )   // if the received agent matches this agent, don't do anything.
-  //   return;
-  //   client.publish( "/memorio/agent", JSON.stringify( thisAgent  ) );
-  // }
-}
-
-// function mou
 
 function drawMap() {
 
@@ -429,6 +393,7 @@ function drawMap() {
   stroke( OUTER_BACKGROUND );
   strokeWeight( 10 );
 
+  //  Also draws dots to give users landmarks/waypoints when navigating.
   for ( let y = 0; y <= MAP_HEIGHT ; y += mapStep ) {
     for ( let x = 0; x <= MAP_WIDTH ; x += mapStep ) {
 
@@ -438,16 +403,8 @@ function drawMap() {
   }
 }
 
-function drawEdges() {
-  noStroke();
-  fill( 235, 20 );
-  rect( 0, 0, width / 3, height );
-  rect( 0, 0, width, height / 3 );
-  rect( width - ( width / 3 ), 0, width / 3, height );
-  rect( 0, height - ( height / 3 ), width, height / 3 );
-}
-
-let alpha = 255;
+//  Tied to title fading animation.
+let titleAlpha = 255;
 
 function drawTitle() {
 
@@ -458,22 +415,17 @@ function drawTitle() {
   noStroke();
   textSize( 48 );
   
-  fill( 50 , alpha );
+  fill( 50 , titleAlpha );
   textStyle( BOLD );
-  text( 'Memor.io', MAP_CENTER.X - leftOffset, MAP_CENTER.Y - topOffset );
+  text( 'Memor.io', thisAgent.x - leftOffset, thisAgent.y - topOffset );
   topOffset -= lineHeight;
 
-  // fill( 100 );
-  // textStyle( NORMAL );
-  // text( 'Find friends', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
-  // topOffset -= lineHeight;
-  // text( 'and share memories.', MAP_CENTER.X - leftOffset, MAP_CENTER.X - topOffset );
-
-  alpha -= 0.5;
-  if ( alpha <= 0 ) titleDrawn = true;
+  titleAlpha -= 0.5;
+  if ( titleAlpha <= 0 ) titleDrawn = true;
 
 }
 
+//  The framerate as a string. Global to avoid updating every single draw loop.
 let fr = "";
 
 function drawFrameRate() {
@@ -494,52 +446,14 @@ function drawAgent( agent ) {
   fill( "#" + agent.color );
   text( agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE ); // drawn with coordinates in the center of character
 
-  if ( agent.children.length > 0 ) {
-
+  //  Recursion to draw the children of children.
+  if ( agent.children.length > 0 )
     for ( c of agent.children ) 
-      // if ( c.id != thisAgent.id ) 
         drawAgent( c );
 
-  }
-
-  // yOffset = 50;
-
-  // if(agent.showText){
-  //   fill(50);
-  //   text('Merge', width/2, ( height/2 ) - yOffset );
-  //   //client.publish( "/memorio/agent", JSON.stringify( agent ) );
-  // } else{
-  //   agent.showText = false;
-  // }
-
 }
 
-let timer = 0;
-
-function move() {
-
-  v1.set( thisAgent.x, thisAgent.y );
-  v2.set( mouseX, mouseY );
-
-  v1.add( v2.sub( v1 ).setMag( speed ) );
-
-  thisAgent.x = v1.x;
-  thisAgent.y = v1.y;
-
-  timer++;
-
-   // limit
-
-}
-
-let enableMouse = false;
-let messageFreq = 10;   // messages per second given 60fps
-let messageStep = 0;
 const velThreshold = 0.01;
-
-function updateStep( freq ) { messageStep = 60 / freq; console.log}
-
-let maxMag, pos;
 
 function traverse() {
 
@@ -572,11 +486,11 @@ function traverse() {
 
   } else if (MAP_SHAPE == 'CIRCLE') {
 
-      pos.set( thisAgent.x - MAP_CENTER.X, thisAgent.y - MAP_CENTER.Y );
-      pos.limit( maxMag - AGENT_SIZE );
+      posFromMapCentre.set( thisAgent.x - MAP_CENTER.X, thisAgent.y - MAP_CENTER.Y );
+      posFromMapCentre.limit( maxMag - AGENT_SIZE );
 
-      thisAgent.x = pos.x + MAP_CENTER.X;
-      thisAgent.y = pos.y + MAP_CENTER.Y;
+      thisAgent.x = posFromMapCentre.x + MAP_CENTER.X;
+      thisAgent.y = posFromMapCentre.y + MAP_CENTER.Y;
 
   }
 
@@ -592,6 +506,46 @@ function traverse() {
 
 }
 
+function checkNeighbourhood( agent ) {
+
+  const attachThreshold = 150;
+
+  thatAgentPos.set( agent.x, agent.y );
+
+  if ( thisAgentPos.dist( thatAgentPos ) < attachThreshold ) {
+   
+    if ( !attachable.includes( agent ) ) {
+      attachable.push( agent );
+      // console.log( 'attachable: pushed!' );
+    }
+
+    stroke( '#' + agent.color );
+    strokeWeight( 4 );
+    noFill();
+    circle( agent.x, agent.y, AGENT_SIZE * 2);
+
+  } else {
+
+    const index = attachable.indexOf( agent );
+    if ( index > -1 ) {
+      attachable.splice( index, 1 );
+      // console.log( 'attachable: spliced: ', index );
+    }
+
+  }
+}
+
+/**
+ *  Updates the amount of frames to skip between every message sent.
+ * 
+ * @param {number} freq   The target frequency of messages sent per second assuming 60fps. Clamped to 0-60.
+ */
+function updateStep( freq ) {
+  freq = clamp( freq, 0, 60 );
+  messageStep = 60 / freq;
+  console.log( 'messages limited to %i/s', freq );
+}
+
 function updateChildPos( parent ) {
 
   if ( parent.children.length > 0 ) {
@@ -601,14 +555,102 @@ function updateChildPos( parent ) {
       updateChildPos( c );
     }
   }
+}
+
+function findThisAsChild( agent ) {
+
+  let child;
+
+  if (agent.children.length > 0 ) {
+    for ( c of agent.children ) {
+      if ( c.id == thisAgent.id ) return c;
+      if ( c.children.length > 0 ) return findThisAsChild( c );
+    }
+  }
+
+  return child;
+  
+}
+
+//  Define mouse functions so desktop doesn't revert to touch functions as default.
+function mousePressed() {}
+function mouseReleased() {}
+
+let touchStartFrame;
+const TOUCH_CLICK_THRESHOLD = 30;
+
+function touchStarted() {
+
+  enableMouse = true;
+  touchStartFrame = frameCount;
+  return false;
+
+}
+
+function touchEnded() {
+
+  //  Compares the number of frames from the start of touch to the release of touch.
+  //  If under threshold, it registers as as a click
+  if ( frameCount - touchStartFrame < TOUCH_CLICK_THRESHOLD) {
+    mouseClicked();
+    enableMouse = !enableMouse;   // Revert the toggle from mouseClicked() used by desktop.
+  } else {
+    enableMouse = false; 
+  }
+
+}
+
+/**
+ * Prevents default touch interaction from browser such as scrolling, pulling down to refresh, and pinching to zoom.
+ */
+document.addEventListener('gesturestart', function(e) {
+  e.preventDefault();
+});
+
+function mouseClicked() {
+  
+  mousePos.set( mouseX, mouseY );
+
+  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) { randomiseCharCol(); return; }
+
+  thisAgentPos.set( thisAgent.x, thisAgent.y );
+
+  for ( a of world ) {
+
+    thatAgentPos.set( a.x, a.y ).sub( thisAgentPos ).add( centrePos );
+
+    if ( attachable.includes( a ) && mousePos.dist( thatAgentPos ) < AGENT_SIZE ) {
+
+      console.log( 'merged!' );
+      isAttached = true;
+      thisAgent.parent = a;
+      newPosAsChild.set( thisAgent.x, thisAgent.y );
+      client.publish( "/memorio/attach", JSON.stringify( { parent: a, child: thisAgent } ) );
+
+      return;
+    }
+  }
+
+  enableMouse = !enableMouse;
+
+}
+
+function mouseWheel( event ) {
+
+  const scrollStep = 0.05;
+
+  if ( event.delta > 0 && scaleRatio < 2 ) { scaleRatio += scrollStep; }
+  else if ( event.delta < 0 && scaleRatio > 0.25 ) { scaleRatio -= scrollStep; }
 
 }
 
 function keyPressed() {
 
-  // thisAgent.char += 1;
+  console.log( keyCode );
+
   switch ( keyCode ) {
 
+    //  WASD and arrow keys to move.
     case ( 37 ):
     case ( 65 ):
       thisAgent.x -= AGENT_SIZE;
@@ -629,13 +671,21 @@ function keyPressed() {
       thisAgent.y += AGENT_SIZE;
       break;
 
+    //  Spacebar to randomise;
     case ( 32 ):
-      thisAgent.char = randomUnicodeChar();
+      thisAgent.char = randomUnicodeChar( enableEmojis );
       thisAgent.color = randomPastel( );
       break;
 
+    //  E to toggle emoji mode.
+    case ( 69 ):
+      enableEmojis = !enableEmojis;
+      break;
+
+    //  F to show/hide framerate.
     case ( 70 ):
       showFrameRate = !showFrameRate;
+      break;
 
   }
 
@@ -643,99 +693,6 @@ function keyPressed() {
 
 }
 
-function mousePressed() {  }
-
-function mouseReleased() {}
-
-let touchStartFrame;
-let touchClickThreshold = 30;
-
-function touchStarted() {
-  enableMouse = true;
-  // randomiseCharCol();
-  touchStartFrame = frameCount;
-  return false;
-}
-
-function touchEnded() {
-  if ( frameCount - touchStartFrame < touchClickThreshold) {
-    mouseClicked();
-    enableMouse = !enableMouse;
-    return;
-  }
-  enableMouse = false; 
-}
-
-document.addEventListener('gesturestart', function(e) {
-  e.preventDefault();
-});
-
-function mouseClicked() {
-
-  // if(thisAgent.showText){
-  //   console.log("Merge successful");
-  //   thisAgent.control=false;
-  //   //thisAgent.showText=false;
-  // }
-
- // let mouse = [ mouseX, mouseY ];
- // if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
-  
-  mousePos.set( mouseX, mouseY );
-
-  if ( mousePos.dist( centrePos ) < AGENT_SIZE ) { randomiseCharCol(); return; }
-
-  thisAgentPos.set( thisAgent.x, thisAgent.y );
-
-  for ( a of world ) {
-    thatAgentPos.set( a.x, a.y ).sub( thisAgentPos ).add( centrePos );
-    if ( attachable.includes( a ) && mousePos.dist( thatAgentPos ) < AGENT_SIZE ) {
-      console.log( 'merged!' );
-      isAttached = true;
-      thisAgent.parent = a;
-      newPosAsChild.set( thisAgent.x, thisAgent.y );
-      client.publish( "/memorio/attach", JSON.stringify( { parent: a, child: thisAgent } ) );
-
-      return;
-    }
-  }
-
-  enableMouse = !enableMouse;
-
-}
-
-function randomiseCharCol() {
-    thisAgent.char = randomUnicodeChar();
-    thisAgent.color = randomPastel( );
-}
-
-function mouseWheel( event ) {
-
-  const scrollStep = 0.05;
-
-    if ( event.delta > 0 && scaleRatio < 2 ) scaleRatio += scrollStep;
-    if ( event.delta < 0 && scaleRatio > 0.25 ) scaleRatio -= scrollStep;
-
-}
-
-function findThisAsChild( agent ) {
-
-  let child = undefined;
-
-  if (agent.children.length > 0 ) {
-
-    for ( c of agent.children ) {
-
-      if ( c.id == thisAgent.id ) return c;
-      if ( c.children.length > 0 ) return findThisAsChild( c );
-      
-    }
-
-  }
-
-  return child;
-
-}
 function messageReceived(topics, message) {
 
   topics = topics.split( '/' );
@@ -792,10 +749,41 @@ function messageReceived(topics, message) {
 
   switch (topic) {
 
-    case ( 'connect' ):
-      world.push( agent );
-      client.publish( '/memorio/world', JSON.stringify( thisAgent ) );
-      console.log( 'new connection! world = ', world );
+    case ( 'connection' ):
+
+      //  Simple check to see if this property exists in case an older version connects.
+      if ( agent.hasOwnProperty('connected') ) {
+        if ( agent.connected ) {
+
+          world.push( agent );
+          client.publish( '/memorio/world', JSON.stringify( thisAgent ) );
+          console.log( 'new connection! world = ', world );
+
+        } else {
+
+          if ( thisAgent.parent.id == agent.id ) {
+            console.log( 'disconnected is parent, agent: ', agent );
+            let grandparent = world.find( a => a.id == thisAgent.parent.parent.id );
+            if ( grandparent) {  // if grandparent exists, new parent is grandparent
+              thisAgent.parent = grandparent;
+              // console.log( 'found grandparent! ' );
+            } else {
+              thisAgent.parent = {};
+              isAttached = false;
+              world.push( thisAgent );
+              client.publish( '/memorio/update', JSON.stringify( thisAgent ) );
+            }
+          }
+
+          let index = world.findIndex( a => a.id == agent.id );
+          if ( index > -1 ) world.splice( index, 1 );
+          index = attachable.findIndex( a => a.id == agent.id );
+          if ( index > -1 ) attachable.splice( index, 1 );
+          console.log( 'someone disconnected! new world = ', world);
+
+        }
+      }
+
       break;
 
     case ( 'world' ):
@@ -821,6 +809,17 @@ function messageReceived(topics, message) {
         }
       }
       // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
+      break;
+
+    /**
+     * These next two cases are from older versions.
+     * Both are now combined into the 'connection' branch.
+     * They're included just in case for reverse compatibility.
+     */
+    case ( 'connect'):
+      world.push( agent );
+      client.publish( '/memorio/world', JSON.stringify( thisAgent ) );
+      console.log( 'new connection! world = ', world );
       break;
 
     case ( 'disconnect' ):
