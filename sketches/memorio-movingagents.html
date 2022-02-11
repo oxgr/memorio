@@ -36,6 +36,7 @@
     /********** Helper Functions **********/
     // let canvas;
 
+    // nearest agent's id
     let blam = 0;
     //Diameter of one particle
     let particleSize = 5;
@@ -307,10 +308,14 @@
     let isAttached = false;
     let enableEmojis = false;
     let enableMouse = false;
-    let ShowText = false;
+    let ShowText = false;   // shows and hides merge text
+    let setted = false;     // determines when to restart animation
 
     let messageFreq = 10;   // messages per second given 60fps
     let messageStep = 0;
+
+    cx = 0;     // set the x and y of thisAgent for merge animation
+    cy = 0;
 
     /********** MQTT **********/
 
@@ -489,9 +494,6 @@
       text(fr, thisAgent.x + 50, thisAgent.y);
 
     }
-    let setted = false;
-    cx = 0;
-    cy = 0;
 
     function drawAgent(agent) {
 
@@ -509,11 +511,6 @@
         particle.move();
         particle.display();
       });
-
-      if (ShowText && agent.id == blam) {
-
-
-      }
 
     }
 
@@ -592,16 +589,20 @@
         ellipse(agent.x, agent.y, 80, 80);
         stroke(50);
         fill(100);
-
+        
         if (setted == false) {
           cx = thisAgent.x;
           cy = thisAgent.y;
+          blam = agent.id;
+          //console.log(agent.id);
           setted = true;
         }
-
-        ellipse(cx, cy, 5, 5);
-        numer = dist(agent.x, agent.y, cx, cy);
-
+        
+        if(blam==agent.id){ // make sure the animation focuses on one player at a time so it doesn't get stuck
+        ellipse(cx, cy, 5, 5); // draw the animated circle
+        numer = dist(agent.x, agent.y, cx, cy); //get the distance from the agent to thisAgent
+        
+        // code to move the circle from thisAgent to the other agent in the animation
         if (agent.x <= cx) {
           cx -= 5;
           if (agent.y <= cy) {
@@ -614,15 +615,23 @@
             cy += 5;
           }
         }
-        if (numer < 5) {
+        
+        if (numer < 40) { //Where does the dot stop?
           setted = false;
         }
         noStroke();
-
         ShowText = true;// show merge text
+        }
+
 
       } else {
-
+          
+          if(blam==agent.id){
+          setted = false; //x and y need to be reset to thisAgent's position
+          ShowText = false; // hide merge text
+          }
+          //console.log(blam);
+          
         const index = attachable.indexOf(agent);
         if (index > -1) {
           attachable.splice(index, 1);
@@ -694,7 +703,6 @@
       } else {
         enableMouse = false;
       }
-
     }
     function PlayerContact() {
       touched = true;
@@ -724,6 +732,7 @@
           
           
             ShowText = false;
+            setted = false;
            
             
           
@@ -892,23 +901,6 @@
               // thisAgent.y = thisAsChild.y;
               // console.log( 'found this as child! x: %i, y: %i', thisAsChild.x, thisAsChild.y);
             }
-            //console.log(dist(thisAgent.x,thisAgent.y,a.x,a.y));
-            // var distance = dist(thisAgent.x, thisAgent.y, a.x, a.y);
-
-            // if (distance < 200 && enableMouse == true) {
-            //   ShowText = true;
-            //   blam = agent.id;
-            //   // console.log(blam);
-            //   PlayerContact();
-            // }
-            // else if (agent.id == blam) {
-            //   // console.log(blam==agent.id);
-            //   //console.log(blam);
-            //   //console.log(agent.id);
-            //   touched = false;
-            //   ShowText = false;
-            //   setted = false;
-            // }
           }
           // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
           break;
