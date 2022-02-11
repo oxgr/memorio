@@ -250,6 +250,8 @@
     const char = randomUnicodeChar(false);
     const color = randomPastel();
 
+
+
     const thisAgent = {
       id: id,
       char: char,
@@ -346,11 +348,15 @@
       client.on('connect', () => client.subscribe('/memorio/*'));
       client.on('message', (topic, message) => messageReceived(topic, message));
 
-      setRandomPos(thisAgent);
+     // setRandomPos(thisAgent);
 
       // Overrides random pos and sets pos to center for easy interaction debugging. Comment out for final release.
-      thisAgent.x = MAP_WIDTH / 2;
-      thisAgent.y = MAP_HEIGHT / 2;
+     // thisAgent.x = MAP_WIDTH / 2;
+      //thisAgent.y = MAP_HEIGHT / 2;
+
+      //random positions
+      thisAgent.x=random(MAP_WIDTH);
+      thisAgent.y=random(MAP_HEIGHT);
 
       thisAgent.connected = true;
       client.publish('/memorio/connection', JSON.stringify(thisAgent));
