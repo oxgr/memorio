@@ -308,7 +308,7 @@
     let isAttached = false;
     let enableEmojis = false;
     let enableMouse = false;
-    let ShowText = false;   // shows and hides merge text
+    let showText = false;   // shows and hides merge text
     let setted = false;     // determines when to restart animation
 
     let messageFreq = 10;   // messages per second given 60fps
@@ -410,7 +410,7 @@
       }
       textSize(AGENT_SIZE);
       for (a of world) drawAgent(a);
-      if (ShowText) {
+      if (showText) {
         text('Merge', thisAgent.x + 50, thisAgent.y);
       }
 
@@ -430,7 +430,6 @@
         if (this.pos.y <= 0) this.direction.y *= -1;
         if (this.pos.y > height) this.direction.y *= -1;
       }
-      // More code...
 
       display() {
         noStroke();
@@ -620,7 +619,7 @@
           setted = false;
         }
         noStroke();
-        ShowText = true;// show merge text
+        showText = true;// show merge text
         }
 
 
@@ -628,7 +627,7 @@
           
           if(blam==agent.id){
           setted = false; //x and y need to be reset to thisAgent's position
-          ShowText = false; // hide merge text
+          showText = false; // hide merge text
           }
           //console.log(blam);
           
@@ -731,7 +730,7 @@
         if (attachable.includes(a) && mousePos.dist(thatAgentPos) < AGENT_SIZE) {
           
           
-            ShowText = false;
+            showText = false;
             setted = false;
            
             
