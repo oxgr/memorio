@@ -301,7 +301,7 @@
     //  Global variables to be defined as p5.Vector objects.
     let v1, v2, thisVel, newVel;
     let mousePos, centrePos;
-    let thisAgentPos, thatAgentPos, newPosAsChild;
+    let thisAgentPos, thatAgentPos, newPosAsChild, particlePos;
     let maxMag, posFromMapCentre;
 
     //  State booleans
@@ -341,9 +341,9 @@
       canvas.parent('#p5');
 
       background(OUTER_BACKGROUND);
-      for (let i = 0; i < particleSum; i++) {
-        particles.push(new Particle());
-      }
+      // for (let i = 0; i < particleSum; i++) {
+      //   particles.push(new Particle());
+      // }
 
       client.on('connect', () => client.subscribe('/memorio/*'));
       client.on('message', (topic, message) => messageReceived(topic, message));
@@ -351,12 +351,12 @@
      // setRandomPos(thisAgent);
 
       // Overrides random pos and sets pos to center for easy interaction debugging. Comment out for final release.
-     // thisAgent.x = MAP_WIDTH / 2;
-      //thisAgent.y = MAP_HEIGHT / 2;
+     thisAgent.x = MAP_WIDTH / 2;
+      thisAgent.y = MAP_HEIGHT / 2;
 
       //random positions
-      thisAgent.x=random(MAP_WIDTH);
-      thisAgent.y=random(MAP_HEIGHT);
+      // thisAgent.x=random(MAP_WIDTH);
+      // thisAgent.y=random(MAP_HEIGHT);
 
       thisAgent.connected = true;
       client.publish('/memorio/connection', JSON.stringify(thisAgent));
@@ -381,9 +381,7 @@
       thisAgentPos = createVector();
       thatAgentPos = createVector();
       newPosAsChild = createVector();
-      background(255);
-
-      //Move and display particles
+      particlePos = createVector();
 
 
       //  Sets the font to the one set for the <body> of the page. Find this at the <style> section. Makes it easy to import fonts if needed.
@@ -405,20 +403,27 @@
 
       traverse();
 
-      thisAgentPos.set(thisAgent.x, thisAgent.y);   //  Update the pos vector once a draw loop instead of every sub-loop.
+      lerpAmt += 0.05
       textSize(AGENT_SIZE);
       textStyle(NORMAL);
 
       for (agent of world) {
+        thisAgentPos.set(thisAgent.x, thisAgent.y);
         if (agent != thisAgent && !isAttached)  // run for every obj in world except if thisAgent
           checkNeighbourhood(agent);
         drawAgent(agent);
       }
-      textSize(AGENT_SIZE);
-      for (a of world) drawAgent(a);
-      if (showText) {
-        text('Merge', thisAgent.x + 50, thisAgent.y);
-      }
+
+            // setting the particles
+      particles.forEach(particle => {
+        particle.move();
+        particle.display();
+      });
+      // textSize(AGENT_SIZE);
+      // for (a of world) drawAgent(a);
+      // if (showText) {
+      //   text('Merge', thisAgent.x + 50, thisAgent.y);
+      // }
 
 
     }
@@ -448,6 +453,7 @@
 
     function drawMap() {
 
+      noStroke();
       fill(255);
       if (MAP_SHAPE == 'RECT') rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
       else if (MAP_SHAPE == 'CIRCLE') circle(MAP_CENTER.X, MAP_CENTER.X, MAP_SIZE);
@@ -509,16 +515,18 @@
       fill("#" + agent.color);
       text(agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE); // drawn with coordinates in the center of character
 
+      stroke('#' + agent.color);
+        strokeWeight(4);
+        noFill(); 
+        circle(agent.x, agent.y, AGENT_SIZE * 2);
+
       //  Recursion to draw the children of children.
       if (agent.children.length > 0)
-        for (c of agent.children)
+        for (c of agent.children) {
+          fill("#" + agent.color);
+          line( agent.x, agent.y, c.x, c.y)
           drawAgent(c);
-
-      // setting the particles
-      particles.forEach(particle => {
-        particle.move();
-        particle.display();
-      });
+        }
 
     }
 
@@ -538,10 +546,10 @@
       }
       else {
         newVel.set(mouseX - width * 0.5, mouseY - height * 0.5)
-        newVel.set(newVel.x / width, newVel.y / height).mult(10);
+        newVel.set(newVel.x / width, newVel.y / height).mult(20);
       }
 
-      thisVel.lerp(newVel, 0.05);   // lower lerp amount, softer acceleration. 
+      thisVel.lerp(newVel, 0.1);   // lower lerp amount, softer acceleration. 
 
       thisAgent.x += thisVel.x;
       thisAgent.y += thisVel.y;
@@ -575,6 +583,8 @@
 
     }
 
+    let lerpAmt = 0;
+
     function checkNeighbourhood(agent) {
 
       const attachThreshold = 150;
@@ -584,67 +594,77 @@
 
       if (thisAgentPos.dist(thatAgentPos) < attachThreshold) {
 
-        if (!attachable.includes(agent)) {
-          attachable.push(agent);
-          // console.log( 'attachable: pushed!' );
-        }
+        if (!attachable.includes(agent)) attachable.push(agent);
 
         stroke('#' + agent.color);
-        strokeWeight(4);
-        noFill();
-        circle(agent.x, agent.y, AGENT_SIZE * 2);
-        fill(204, 101, 192, 127);
-        ellipse(agent.x, agent.y, 80, 80);
-        stroke(50);
-        fill(100);
+        strokeWeight(2);
+        noFill(); 
+        circle(agent.x, agent.y, AGENT_SIZE + ( AGENT_SIZE * lerpAmt ) );
+
+        // fill(204, 101, 192, 127);
+        // ellipse(agent.x, agent.y, 80, 80);
+        // stroke(50);
+
+        fill( '#' + agent.color );
         
         if (setted == false) {
-          cx = thisAgent.x;
-          cy = thisAgent.y;
+
+          // cx = thisAgent.x;
+          // cy = thisAgent.y;
+
+          // particlePos.set( thisAgentPos );
+          lerpAmt = 0;
           blam = agent.id;
           //console.log(agent.id);
           setted = true;
+
         }
+          
+
+          particlePos = thisAgentPos.lerp( thatAgentPos, lerpAmt );
+
+          cx = particlePos.x;
+          cy = particlePos.y;
+
+          const particleSize = 5;
+      
         
-        if(blam==agent.id){ // make sure the animation focuses on one player at a time so it doesn't get stuck
-        ellipse(cx, cy, 5, 5); // draw the animated circle
-        numer = dist(agent.x, agent.y, cx, cy); //get the distance from the agent to thisAgent
+        // if(blam==agent.id){ // make sure the animation focuses on one player at a time so it doesn't get stuck
+          circle( cx, cy, particleSize); // draw the animated circle
+
+        // numer = dist(agent.x, agent.y, cx, cy); //get the distance from the agent to thisAgent
         
         // code to move the circle from thisAgent to the other agent in the animation
-        if (agent.x <= cx) {
-          cx -= 5;
-          if (agent.y <= cy) {
-            cy -= 5;
-          }
-        }
-        else if (agent.x >= cx) {
-          cx += 5;
-          if (agent.y >= cy) {
-            cy += 5;
-          }
-        }
+        // if (agent.x <= cx) {
+        //   cx -= 5;
+        //   if (agent.y <= cy) {
+        //     cy -= 5;
+        //   }
+        // }
+        // else if (agent.x >= cx) {
+        //   cx += 5;
+        //   if (agent.y >= cy) {
+        //     cy += 5;
+        //   }
+        // }
         
-        if (numer < 40) { //Where does the dot stop?
-          setted = false;
-        }
-        noStroke();
-        showText = true;// show merge text
-        }
+          //Where does the dot stop?
+          if ( lerpAmt >= 1 ) setted = false;
+          noStroke();
+          showText = true;// show merge text
+        // }
 
 
       } else {
           
-          if(blam==agent.id){
-          setted = false; //x and y need to be reset to thisAgent's position
-          showText = false; // hide merge text
-          }
+          // if(blam==agent.id){
+          // setted = false; //x and y need to be reset to thisAgent's position
+          // showText = false; // hide merge text
+          // }
           //console.log(blam);
           
         const index = attachable.indexOf(agent);
-        if (index > -1) {
-          attachable.splice(index, 1);
-          // console.log( 'attachable: spliced: ', index );
-        }
+        if (index > -1) attachable.splice(index, 1);
 
       }
     }
@@ -671,18 +691,31 @@
       }
     }
 
-    function findThisAsChild(agent) {
+    function findAgentAsChild(target, parent) {
 
       let child;
 
-      if (agent.children.length > 0) {
-        for (c of agent.children) {
-          if (c.id == thisAgent.id) return c;
-          if (c.children.length > 0) return findThisAsChild(c);
+      if (parent.children.length > 0) {
+        for (c of parent.children) {
+          if (c.id == target.id) return c;
+          if (c.children.length > 0) return findAgentAsChild(target, c);
         }
       }
 
       return child;
+
+    }
+
+    function findAgentInWorld(target) {
+
+      for ( a of world ) {
+
+        if ( a.id == target.id ) return a;
+        return findAgentAsChild(target, a);
+
+      }
+
+      return null;
 
     }
 
@@ -728,7 +761,16 @@
 
       mousePos.set(mouseX, mouseY);
 
-      if (mousePos.dist(centrePos) < AGENT_SIZE) { randomiseCharCol(); return; }
+      if ( mousePos.dist(centrePos) < AGENT_SIZE ) { randomiseCharCol(); return; }
+      
+      if ( isAttached ) {
+
+        client.publish( '/memorio/detach', JSON.stringify( {parent: thisAgent.parent, child: thisAgent}))
+        isAttached = false;
+        thisAgent.parent = {};
+        return;
+
+      }
 
       thisAgentPos.set(thisAgent.x, thisAgent.y);
 
@@ -739,12 +781,9 @@
         if (attachable.includes(a) && mousePos.dist(thatAgentPos) < AGENT_SIZE) {
           
           
-            showText = false;
-            setted = false;
+          showText = false;
+          setted = false;
            
-            
-          
-
           console.log('merged!');
           isAttached = true;
           thisAgent.parent = a;
@@ -822,21 +861,41 @@
               thisAgent.children.push(child);
               client.publish('/memorio/update', JSON.stringify(thisAgent));
 
-            } else if (thisAgent.id == child.id) {
-
-
-
             } else {
 
               let p = world.find(a => a.id == parent.id);
-              if (p) p.children.push(child);
+              let c = world.find(a => a.id == child.id);
+              if (c) c.parent = p;
+              if (p) p.children.push(c);
 
             }
 
             let cIndex = world.findIndex(a => a.id == child.id);
             if (cIndex > -1) world.splice(cIndex, 1);
+
             // console.log( 'thisAgent: %o, world: %o', thisAgent, world );
             break;
+
+          case ('detach'):
+            if (thisAgent.id == parent.id) {
+
+              let cIndex = thisAgent.children.findIndex(a => a.id == child.id);
+              if (cIndex > -1) thisAgent.children.splice(cIndex, 1);
+              client.publish('/memorio/update', JSON.stringify(thisAgent));
+
+            } else {
+
+              let p = findAgentInWorld( parent );
+              let cIndex = p.children.findIndex(a => a.id == child.id);
+              if (cIndex > -1) p.children.splice( cIndex, 1 );
+
+            }
+
+            if ( thisAgent.id == child.id ) {
+              world.push( thisAgent );
+            } else {
+              world.push( child );
+            }
 
         }
 
@@ -848,28 +907,33 @@
 
       if (agent.id == thisAgent.id) return;  // if the received agent matches this agent, don't do anything.
 
-
       switch (topic) {
 
         case ('connection'):
 
           //  Simple check to see if this property exists in case an older version connects.
-          if (agent.hasOwnProperty('connected')) {
-            if (agent.connected) {
+          if ( agent.hasOwnProperty('connected') ) {
+            if ( agent.connected ) {
 
               world.push(agent);
-              client.publish('/memorio/world', JSON.stringify(thisAgent));
+              if ( !isAttached ) client.publish('/memorio/world', JSON.stringify(thisAgent));
               console.log('new connection! world = ', world);
 
             } else {
 
               if (thisAgent.parent.id == agent.id) {
-                console.log('disconnected is parent, agent: ', agent);
+
+                console.log('disconnected is parent, agent from world: ', thisAgent.parent);
                 let grandparent = world.find(a => a.id == thisAgent.parent.parent.id);
+
                 if (grandparent) {  // if grandparent exists, new parent is grandparent
+
                   thisAgent.parent = grandparent;
-                  // console.log( 'found grandparent! ' );
+                  console.log( 'found grandparent: ', grandparent );
+
                 } else {
+
+                  console.log( 'agent.parent not found ')
                   thisAgent.parent = {};
                   isAttached = false;
                   world.push(thisAgent);
@@ -902,7 +966,7 @@
             a.x = agent.x;
             a.y = agent.y;
             a.children = agent.children;
-            let thisAsChild = findThisAsChild(a);
+            let thisAsChild = findAgentAsChild(thisAgent, a);
             if (isAttached && thisAsChild) {
               newPosAsChild.set(thisAsChild.x, thisAsChild.y);
               // thisAgent.x = thisAsChild.x;
@@ -927,13 +991,19 @@
         case ('disconnect'):
 
           if (thisAgent.parent.id == agent.id) {
-            console.log(' disconnected is parent, agent: ', agent);
-            let grandparent = world.find(a => a.id == agent.parent.id);
+
+            console.log('disconnected is parent, agent from world: ', thisAgent.parent);
+            let grandparent = world.find(a => a.id == thisAgent.parent.parent.id);
+
             if (grandparent) {  // if grandparent exists, new parent is grandparent
+
               thisAgent.parent = grandparent;
-              // console.log( 'found grandparent! ' );
+              console.log( 'found grandparent: ', grandparent );
+
             } else {
-              thisAgent.parent.id = {};
+
+              console.log( 'agent.parent not found ')
+              thisAgent.parent = {};
               isAttached = false;
               world.push(thisAgent);
               client.publish('/memorio/update', JSON.stringify(thisAgent));
