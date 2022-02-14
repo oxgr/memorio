@@ -538,18 +538,29 @@
 
       // lock movement before first click or if no touch.
 
+      thisAgentPos.set(thisAgent.x, thisAgent.y);
+
       if (isAttached) {
-        thisAgentPos.set(thisAgent.x, thisAgent.y);
         newVel.set(newPosAsChild.x - thisAgentPos.x, newPosAsChild.y - thisAgentPos.y).mult(0.1);
       } else if (!enableMouse) {
         newVel.set(0, 0);
       }
       else {
+        for ( a of attachable ) {
+          thatAgentPos.set( a.x, a.y );
+          if (thisAgentPos.dist( thatAgentPos ) > AGENT_SIZE * 2) {
+            newVel.set( thatAgentPos.sub( thisAgentPos ));
+            thisVel.lerp(newVel, 0.002);
+          }
+        }
         newVel.set(mouseX - width * 0.5, mouseY - height * 0.5)
         newVel.set(newVel.x / width, newVel.y / height).mult(20);
+        
       }
 
       thisVel.lerp(newVel, 0.1);   // lower lerp amount, softer acceleration. 
+
+
 
       thisAgent.x += thisVel.x;
       thisAgent.y += thisVel.y;
