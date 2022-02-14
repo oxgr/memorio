@@ -550,11 +550,11 @@
           thatAgentPos.set( a.x, a.y );
           if (thisAgentPos.dist( thatAgentPos ) > AGENT_SIZE * 2) {
             newVel.set( thatAgentPos.sub( thisAgentPos ));
-            thisVel.lerp(newVel, 0.002);
+            thisVel.lerp(newVel, 0.0015);
           }
         }
         newVel.set(mouseX - width * 0.5, mouseY - height * 0.5)
-        newVel.set(newVel.x / width, newVel.y / height).mult(20);
+        newVel.set(newVel.x / width, newVel.y / height).mult(15);
         
       }
 
@@ -730,6 +730,12 @@
 
     }
 
+    function randomiseCharCol() {
+      thisAgent.char = randomUnicodeChar(enableEmojis);
+      thisAgent.color = randomPastel();
+      client.publish("/memorio/update", JSON.stringify(thisAgent));
+    }
+
     //  Define mouse functions so desktop doesn't revert to touch functions as default.
     function mousePressed() { }
     function mouseReleased() { }
@@ -779,6 +785,7 @@
         client.publish( '/memorio/detach', JSON.stringify( {parent: thisAgent.parent, child: thisAgent}))
         isAttached = false;
         thisAgent.parent = {};
+        world.push( thisAgent );
         return;
 
       }
@@ -790,7 +797,6 @@
         thatAgentPos.set(a.x, a.y).sub(thisAgentPos).add(centrePos);
 
         if (attachable.includes(a) && mousePos.dist(thatAgentPos) < AGENT_SIZE) {
-          
           
           showText = false;
           setted = false;
@@ -826,8 +832,7 @@
 
         //  Spacebar to randomise;
         case (32):
-          thisAgent.char = randomUnicodeChar(enableEmojis);
-          thisAgent.color = randomPastel();
+          randomiseCharCol
           break;
 
         //  E to toggle emoji mode.
@@ -840,9 +845,6 @@
           showFrameRate = !showFrameRate;
           break;
       }
-
-      client.publish("/memorio/update", JSON.stringify(thisAgent));
-
     }
 
     function messageReceived(topics, message) {
@@ -902,11 +904,7 @@
 
             }
 
-            if ( thisAgent.id == child.id ) {
-              world.push( thisAgent );
-            } else {
-              world.push( child );
-            }
+            if ( thisAgent.id != child.id ) world.push( child );
 
         }
 
