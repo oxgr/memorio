@@ -1,12 +1,3 @@
-# kee-arr
- To host work from the Hawk group for Project 1 of DATT 3700.
-
-Resolving merge conflicts:
-https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-on-github:
-
-greetings from devel!
-
-pull request from devel
-
-Something new to add
+# memor.io
+A multiplayer artwork exploring the possibilities of distributed networks. Created as part of DATT 3700 by Faadhi Fauzi and Danial Paulraj.
 
