@@ -269,6 +269,8 @@
     const AGENT_SIZE = 40;
     const AGENT_SIZE_HALF = AGENT_SIZE / 2;
 
+    const attachThreshold = AGENT_SIZE * 4
+
     const OUTER_BACKGROUND = "#ccddee";
 
     const MAP_SIZE = 4000;
@@ -315,9 +317,6 @@
 
     let messageFreq = 10;   // messages per second given 60fps
     let messageStep = 0;
-
-    cx = 0;     // set the x and y of thisAgent for merge animation
-    cy = 0;
 
     /********** MQTT **********/
 
@@ -400,10 +399,10 @@
       drawMap();
       if (!titleDrawn) drawTitle();
       if (showFrameRate) drawFrameRate();     // Press F to show/hide framerate for debugging.
+      if ( enableMouse ) drawMouse();
 
       traverse();
 
-      lerpAmt += 0.05
       textSize(AGENT_SIZE);
       textStyle(NORMAL);
 
@@ -425,6 +424,8 @@
       //   text('Merge', thisAgent.x + 50, thisAgent.y);
       // }
 
+
+      
 
     }
     function windowResized() {
@@ -484,7 +485,7 @@
       noStroke();
       textSize(48);
 
-      fill(50, titleAlpha);
+      fill(100, titleAlpha);
       textStyle(BOLD);
       text('Memor.io', thisAgent.x - leftOffset, thisAgent.y - topOffset);
       topOffset -= lineHeight;
@@ -516,9 +517,9 @@
       text(agent.char, agent.x - AGENT_SIZE_HALF, agent.y - AGENT_SIZE_HALF, AGENT_SIZE); // drawn with coordinates in the center of character
 
       stroke('#' + agent.color);
-        strokeWeight(4);
-        noFill(); 
-        circle(agent.x, agent.y, AGENT_SIZE * 2);
+      strokeWeight(4);
+      noFill(); 
+      circle(agent.x, agent.y, AGENT_SIZE * 2);
 
       //  Recursion to draw the children of children.
       if (agent.children.length > 0)
@@ -527,6 +528,34 @@
           line( agent.x, agent.y, c.x, c.y)
           drawAgent(c);
         }
+
+    }
+
+    function drawMouse() {
+
+      // translate( thisAgent.x, thisAgent.y);
+      // translate( width * -0.5, height * -0.5);       //  Move origin to center of screen.
+      // scale(scaleRatio);                      //  Adjust zoom.
+      
+
+      mousePos.set(mouseX - width * 0.5, mouseY - height * 0.5);
+      mousePos.div( scaleRatio )
+      mousePos.set(mousePos.x + thisAgent.x, mousePos.y + thisAgent.y);
+
+      // mousePos.set( mouseX, mouseY );
+
+      noStroke();
+      fill( 'pink' );
+      circle( mousePos.x, mousePos.y, AGENT_SIZE);
+
+      noFill();
+      stroke( 'pink' );
+      circle( mousePos.x, mousePos.y, AGENT_SIZE * 1.5);
+
+      // translate(width * 0.5, height * 0.5);       //  Move origin to center of screen.
+      // // scale(scaleRatio);                      //  Adjust zoom.
+      // translate(-thisAgent.x, -thisAgent.y);
+      
 
     }
 
@@ -542,20 +571,28 @@
 
       if (isAttached) {
         newVel.set(newPosAsChild.x - thisAgentPos.x, newPosAsChild.y - thisAgentPos.y).mult(0.1);
-      } else if (!enableMouse) {
-        newVel.set(0, 0);
-      }
-      else {
+      } else {
         for ( a of attachable ) {
           thatAgentPos.set( a.x, a.y );
-          if (thisAgentPos.dist( thatAgentPos ) > AGENT_SIZE * 2) {
-            newVel.set( thatAgentPos.sub( thisAgentPos ));
-            thisVel.lerp(newVel, 0.0015);
-          }
+          const dist = thisAgentPos.dist( thatAgentPos );
+          const force = thatAgentPos.sub( thisAgentPos ).setMag( dist - attachThreshold * 0.5 );
+          newVel.set( force );
+          // if ( dist == attachThreshold * 0.5 ) {
+          //   newVel.set( 0, 0 );
+          // } else if ( dist < attachThreshold && dist > attachThreshold * 0.5 ) {
+          //   newVel.set( force );
+          // } else if ( dist < attachThreshold * 0.5 ) {
+          //   newVel.set( force );
+          // }
+          thisVel.lerp(newVel, 0.005);
         }
-        newVel.set(mouseX - width * 0.5, mouseY - height * 0.5)
-        newVel.set(newVel.x / width, newVel.y / height).mult(15);
-        
+        if (!enableMouse) {
+          newVel.set(0, 0);
+        }
+        else {
+          newVel.set(mouseX - width * 0.5, mouseY - height * 0.5)
+          newVel.set(newVel.x / width, newVel.y / height).mult(15);        
+        }
       }
 
       thisVel.lerp(newVel, 0.1);   // lower lerp amount, softer acceleration. 
@@ -598,8 +635,6 @@
 
     function checkNeighbourhood(agent) {
 
-      const attachThreshold = 150;
-
       thatAgentPos.set(agent.x, agent.y);
       // thisAgent.char += 1;
 
@@ -617,6 +652,9 @@
         // stroke(50);
 
         fill( '#' + agent.color );
+
+      
+      
         
         if (setted == false) {
 
@@ -630,18 +668,34 @@
           setted = true;
 
         }
+
+        lerpAmt += 0.02 / attachable.length;
+
+        const particleSize = 5;
+        strokeWeight( 2 );
+        
+
+        particlePos = thisAgentPos.lerp( thatAgentPos, lerpAmt );
+
+        const cx = particlePos.x;
+        const cy = particlePos.y;
+
+        // circle( cx, cy, particleSize); // draw the animated circle
+
+        particlePos = thisAgentPos.lerp( thatAgentPos, lerpAmt * 0.9 );
+
+        const cx2 = particlePos.x;
+        const cy2 = particlePos.y;
+
+        // circle( cx, cy, particleSize); // draw the animated circle
+
+        line( cx, cy, cx2, cy2);
+
           
-
-          particlePos = thisAgentPos.lerp( thatAgentPos, lerpAmt );
-
-          cx = particlePos.x;
-          cy = particlePos.y;
-
-          const particleSize = 5;
       
         
         // if(blam==agent.id){ // make sure the animation focuses on one player at a time so it doesn't get stuck
-          circle( cx, cy, particleSize); // draw the animated circle
+          
 
         // numer = dist(agent.x, agent.y, cx, cy); //get the distance from the agent to thisAgent
         
@@ -667,12 +721,6 @@
 
 
       } else {
-          
-          // if(blam==agent.id){
-          // setted = false; //x and y need to be reset to thisAgent's position
-          // showText = false; // hide merge text
-          // }
-          //console.log(blam);
           
         const index = attachable.indexOf(agent);
         if (index > -1) attachable.splice(index, 1);
@@ -704,16 +752,12 @@
 
     function findAgentAsChild(target, parent) {
 
-      let child;
-
       if (parent.children.length > 0) {
         for (c of parent.children) {
           if (c.id == target.id) return c;
           if (c.children.length > 0) return findAgentAsChild(target, c);
         }
       }
-
-      return child;
 
     }
 
@@ -722,7 +766,8 @@
       for ( a of world ) {
 
         if ( a.id == target.id ) return a;
-        return findAgentAsChild(target, a);
+        const c = findAgentAsChild(target, a);
+        if ( c ) return c;
 
       }
 
@@ -800,6 +845,7 @@
           
           showText = false;
           setted = false;
+          enableMouse = false;
            
           console.log('merged!');
           isAttached = true;
@@ -885,6 +931,8 @@
 
             let cIndex = world.findIndex(a => a.id == child.id);
             if (cIndex > -1) world.splice(cIndex, 1);
+            const attIndex = attachable.findIndex(a => a.id == child.id);
+            if (attIndex > -1) attachable.splice(attIndex, 1);
 
             // console.log( 'thisAgent: %o, world: %o', thisAgent, world );
             break;
@@ -914,7 +962,7 @@
         agent = message;
       }
 
-      if (agent.id == thisAgent.id) return;  // if the received agent matches this agent, don't do anything.
+      if (agent.id == thisAgent.id && topic != 'update') return;  // if the received agent matches this agent, don't do anything.
 
       switch (topic) {
 
@@ -950,10 +998,10 @@
                 }
               }
 
-              let index = world.findIndex(a => a.id == agent.id);
-              if (index > -1) world.splice(index, 1);
-              index = attachable.findIndex(a => a.id == agent.id);
-              if (index > -1) attachable.splice(index, 1);
+              const worldIndex = world.findIndex(a => a.id == agent.id);
+              if (worldIndex > -1) world.splice(worldIndex, 1);
+              const attIndex = attachable.findIndex(a => a.id == agent.id);
+              if (attIndex > -1) attachable.splice(attIndex, 1);
               console.log('someone disconnected! new world = ', world);
 
             }
@@ -967,11 +1015,11 @@
           break;
 
         case ('update'):
-          // const subtopic = topics[3]; 
-          let a = world.find(a => a.id == agent.id);
+          let a = findAgentInWorld( agent );
           if (a) {    // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
             a.char = agent.char;
             a.color = agent.color;
+            if ( thisAgent.id == agent.id ) return;
             a.x = agent.x;
             a.y = agent.y;
             a.children = agent.children;
@@ -982,7 +1030,7 @@
               // thisAgent.y = thisAsChild.y;
               // console.log( 'found this as child! x: %i, y: %i', thisAsChild.x, thisAsChild.y);
             }
-          }
+          } else { console.log( 'didnt find agent to update')}
           // console.log( "id: %s, char: %s, x: %i, y: %i", agent.id, agent.char, agent.x, agent.y );    // formats like printf
           break;
 
