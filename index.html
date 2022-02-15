@@ -961,8 +961,10 @@
       } else {
         agent = message;
       }
+      
+      const sameId = agent.id == thisAgent.id;
 
-      if (agent.id == thisAgent.id && topic != 'update') return;  // if the received agent matches this agent, don't do anything.
+      if (sameId && topic != 'update') return;  // if the received agent matches this agent, don't do anything.
 
       switch (topic) {
 
@@ -1017,9 +1019,11 @@
         case ('update'):
           let a = findAgentInWorld( agent );
           if (a) {    // Tried other methods to make a deep copy (JSON.parse/stringify), but this works best.
-            a.char = agent.char;
-            a.color = agent.color;
-            if ( thisAgent.id == agent.id ) return;
+            if (!sameId || (sameId && isAttached)) {
+              a.char = agent.char;
+              a.color = agent.color;
+            }
+            if ( sameId ) return;
             a.x = agent.x;
             a.y = agent.y;
             a.children = agent.children;
