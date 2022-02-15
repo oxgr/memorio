@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="360" >
+    <title>memor.io</title>
+    
+    <script src="https://unpkg.com/p5@1.4.0/lib/p5.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/get-some-cool-emojis"></script>
+    <style>
+    	body {
+    		margin:  0;
+    	}
+    </style>
+	</head>
+
+	<body>
+		<script>
+
+const randomPos = () => [ Math.floor( Math.random() * width ), Math.floor( Math.random() * height ) ];
+const setRandomPos = ( memory ) => { memory.x = randomPos()[0]; memory.y = randomPos()[1]; }
+const randomCharCode = () => { 
+  let c;
+  // do { c = Math.ceil( Math.random() * 2048 ); }
+  //   while ( c < 32 || ( 65 < c && c < 880 ) );
+
+  return c;
+  }
+
+const decoder = new TextDecoder("utf-8");
+
+const id = Math.ceil( Math.random() * Math.pow( 16, 4 ) ).toString(16); // generate random base-16 4-digit code as id i.e. 1-f
+// const char = randomCharCode();
+const char = getSomeCoolEmojis(1);
+console.log( char, String.fromCharCode( char ));
+const color = Math.ceil( Math.random() * Math.pow( 255, 3 ) ).toString(16);
+
+const thisAgent = {
+  	id: id,
+  	char: char,
+  	color: color,
+  	x: 0,
+  	y: 100
+  }
+
+const memory = [ thisAgent ];   // memory includes all agents that are attached.
+const world  = [ thisAgent ];   // world includes all agents that are connected.
+
+const agentSize = 48;
+
+const clientId = "memorio-" + id;
+
+const bg = "#fff";
+
+let textX = 100;
+let textY = 100;
+const lineHeight = 30;
+
+// MQTT --------------------
+const server = "wss://datt3700:datt3700experiments@datt3700.cloud.shiftr.io";
+const client = mqtt.connect(server, { clientId: clientId });
+
+// Functions ++++++++++++++++++++++++++++++
+
+function setup() {
+
+  createCanvas( windowWidth, windowHeight );
+
+  background( bg );
+
+  setRandomPos( thisAgent );
+  
+  client.on('connect', () => client.subscribe('/memorio/*') );
+  client.on('message', (topic, message) => messageReceived(topic, message) );
+  client.publish( "memorio/connect", JSON.stringify( thisAgent ) );
+
+  fill('white');
+  noStroke();
+  
+  // textFont( 'Courier' );
+
+}
+
+function draw() { 
+
+  background( 255 );
+
+  textSize( 24 );
+  fill( 235, 20 );
+  rect( 0, 0, width / 3, height );
+  rect( 0, 0, width, height / 3 );
+  rect( width - ( width / 3 ), 0, width / 3, height );
+  rect( 0, height - ( height / 3 ), width, height / 3 );
+
+  fill( 50 );
+  textStyle( BOLD );
+  text( 'Memor.io', 50, 50 );
+  textStyle( NORMAL );
+  fill( 100 );
+  text( 'Press arrow keys/WASD', 50, 100 );
+  text( 'or click on edges to move.', 50, 150 );
+
+  textSize( agentSize );
+  for ( a of world ) drawAgent( a );
+
+}
+
+function drawAgent( agent ) {
+
+
+  fill( "#" + agent.color );
+  text( agent.char, agent.x, agent.y, agentSize )
+
+}
+
+function keyPressed() {
+
+  // thisAgent.char += 1;
+
+  switch ( keyCode ) {
+
+    case ( 37 ):
+    case ( 65 ):
+      thisAgent.x -= agentSize;
+      break;
+
+    case ( 38 ):
+    case ( 87 ):
+      thisAgent.y -= agentSize;
+      break;
+    
+    case ( 39 ):
+    case ( 68 ):
+      thisAgent.x += agentSize;
+      break;
+    
+    case ( 40 ):
+    case ( 83 ):
+      thisAgent.y += agentSize;
+      break;
+
+  }
+
+  client.publish( "/memorio/agent", JSON.stringify( thisAgent ) );
+
+}
+
+function mouseClicked() {
+
+  let mouse = [ mouseX, mouseY ];
+
+  console.log()
+
+  if ( mouse[0] < width / 3 ) thisAgent.x -= agentSize;
+
+  if ( mouse[1] < height / 3 ) thisAgent.y -= agentSize;
+
+  if ( mouse[0] > width - ( width / 3 ) ) thisAgent.x += agentSize;
+
+  if ( mouse[1] > height - ( height / 3 ) ) thisAgent.y += agentSize;
+
+
+}
+
+function messageReceived(topic, message) {
+
+  topic = topic.split( '/' )[2];      // get the first sub branch of memorio.
+  message = decoder.decode(message);  // decode array buffer.
+
+  let agent;
+  if ( topic == 'connect' || topic == 'agent' || topic == 'world') {   // memory and world branch is reserved for arrays of agent objects.
+    agent = JSON.parse( message );    
+    if ( agent.id == thisAgent.id )   // if the received agent matches this agent, don't do anything.
+      return;
+  }
+
+
+  switch (topic) {
+
+    case ( 'connect' ):
+      world.push( agent );
+      client.publish( '/memorio/world', JSON.stringify( thisAgent ) );
+      console.log( 'new connection! world = ', world );
+      break;
+
+    case ( 'agent' ):
+      let a = world.find( a => a.id == agent.id );
+      if ( a ) {
+        a.x = agent.x;
+        a.y = agent.y;
+      }
+      console.log( "id: %s, x: %i, y: %i", agent.id, agent.x, agent.y );    // formats like printf
+      break;
+
+    case ( 'world' ):
+      if ( !world.find( a => a.id == agent.id ) ) world.push( agent );
+      console.log( 'received agent. new world = ', world );
+      break;
+
+    case ( 'chat' ):
+      console.log( message );
+      break;
+
+  }
+
+}
+
+	</script>
+</body>
