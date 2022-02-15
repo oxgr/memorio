@@ -354,8 +354,8 @@
       thisAgent.y = MAP_HEIGHT / 2;
 
       //random positions
-      // thisAgent.x=random(MAP_WIDTH);
-      // thisAgent.y=random(MAP_HEIGHT);
+       thisAgent.x=random(MAP_WIDTH);
+       thisAgent.y=random(MAP_HEIGHT);
 
       thisAgent.connected = true;
       client.publish('/memorio/connection', JSON.stringify(thisAgent));
