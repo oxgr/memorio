@@ -425,9 +425,23 @@
       // }
 
 
-      
+      if (touches.length >= 2) {
+        if (!touchDistSet) {
+          baseTouchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+          baseTouchDist /= scaleRatio;
+          touchDistSet = true;
+        }
+        newTouchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+        scaleRatio = ( newTouchDist / baseTouchDist )
+        scaleRatio = clamp(scaleRatio, 0.1, 2);
+      } else {
+        touchDistSet = false
+      }
 
     }
+    
+    let baseTouchDist, newTouchDist;
+    let touchDistSet = false;
     function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
